@@ -14,6 +14,7 @@
             height: 20px;
             background: cyan;
             position: absolute;
+            display: none;
         }
 
         .enemy {
@@ -30,10 +31,34 @@
             left: 10px;
             font-family: Arial;
             font-size: 16px;
+            display: none;
+        }
+
+        #menu {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
+
+<div id="menu">
+    <h1>Kaçış Oyunu</h1>
+    <button onclick="startGame()">BAŞLA</button>
+</div>
 
 <div id="player"></div>
 <div id="score">Skor: 0</div>
@@ -41,11 +66,11 @@
 <script>
 let player = document.getElementById("player");
 let scoreEl = document.getElementById("score");
+let menu = document.getElementById("menu");
 
 let x = 300;
 let y = 200;
 
-// 🧠 oyuncu kontrol
 let vx = 0;
 let vy = 0;
 let accel = 0.6;
@@ -53,10 +78,10 @@ let friction = 0.85;
 
 let score = 0;
 let gameOver = false;
+let gameStarted = false;
 
 let enemies = [];
 
-// 🎮 input
 let keys = {
     left: false,
     right: false,
@@ -64,7 +89,19 @@ let keys = {
     down: false
 };
 
+function startGame() {
+    menu.style.display = "none";
+    player.style.display = "block";
+    scoreEl.style.display = "block";
+
+    gameStarted = true;
+    gameLoop();
+}
+
+// 🎮 input
 document.addEventListener("keydown", (e) => {
+    if (!gameStarted) return;
+
     if (e.key === "ArrowLeft") keys.left = true;
     if (e.key === "ArrowRight") keys.right = true;
     if (e.key === "ArrowUp") keys.up = true;
@@ -72,13 +109,15 @@ document.addEventListener("keydown", (e) => {
 });
 
 document.addEventListener("keyup", (e) => {
+    if (!gameStarted) return;
+
     if (e.key === "ArrowLeft") keys.left = false;
     if (e.key === "ArrowRight") keys.right = false;
     if (e.key === "ArrowUp") keys.up = false;
     if (e.key === "ArrowDown") keys.down = false;
 });
 
-// 👾 düşman oluştur
+// 👾 düşman
 function spawnEnemy() {
     let enemy = document.createElement("div");
     enemy.classList.add("enemy");
@@ -93,22 +132,22 @@ function spawnEnemy() {
         el: enemy,
         x: ex,
         y: ey,
-        vx: (Math.random() - 0.5) * 6, // 🔥 HIZLANDIRILDI
-        vy: (Math.random() - 0.5) * 6  // 🔥 HIZLANDIRILDI
+        vx: (Math.random() - 0.5) * 6,
+        vy: (Math.random() - 0.5) * 6
     });
 
     document.body.appendChild(enemy);
 }
 
-// başlangıç düşmanları
+// başlangıç
 for (let i = 0; i < 5; i++) {
     spawnEnemy();
 }
 
 function gameLoop() {
-    if (gameOver) return;
+    if (gameOver || !gameStarted) return;
 
-    // 🧍 oyuncu hareketi
+    // oyuncu
     if (keys.left) vx -= accel;
     if (keys.right) vx += accel;
     if (keys.up) vy -= accel;
@@ -120,16 +159,10 @@ function gameLoop() {
     x += vx;
     y += vy;
 
-    // sınırlar
-    if (x < 0) x = 0;
-    if (y < 0) y = 0;
-    if (x > window.innerWidth - 20) x = window.innerWidth - 20;
-    if (y > window.innerHeight - 20) y = window.innerHeight - 20;
-
     player.style.left = x + "px";
     player.style.top = y + "px";
 
-    // 👾 düşman hareketi
+    // düşmanlar
     enemies.forEach(e => {
         e.x += e.vx;
         e.y += e.vy;
@@ -140,7 +173,7 @@ function gameLoop() {
         e.el.style.left = e.x + "px";
         e.el.style.top = e.y + "px";
 
-        // 💥 çarpışma
+        // çarpışma
         if (
             x < e.x + 20 &&
             x + 20 > e.x &&
@@ -148,24 +181,27 @@ function gameLoop() {
             y + 20 > e.y
         ) {
             gameOver = true;
-            alert("Oyun bitti! Skor: " + score);
-            location.reload();
+            gameStarted = false;
+
+            // 💀 game over paneli (butonları KORUYORUZ)
+            menu.style.display = "flex";
+            menu.innerHTML = `
+                <h1>OYUN BİTTİ</h1>
+                <h2>Skor: ${score}</h2>
+                <button onclick="location.reload()">TEKRAR OYNA</button>
+            `;
         }
     });
 
-    // 📈 skor
     score++;
     scoreEl.innerText = "Skor: " + score;
 
-    // 🔥 zorluk artışı
     if (score % 300 === 0) {
         spawnEnemy();
     }
 
     requestAnimationFrame(gameLoop);
 }
-
-gameLoop();
 </script>
 
 </body>
