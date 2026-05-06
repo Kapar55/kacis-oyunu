@@ -132,8 +132,8 @@ function spawnEnemy() {
         el: enemy,
         x: ex,
         y: ey,
-        vx: (Math.random() - 0.5) * 20, // 🔥 HIZ 20
-        vy: (Math.random() - 0.5) * 20  // 🔥 HIZ 20
+        vx: (Math.random() - 0.5) * 20,
+        vy: (Math.random() - 0.5) * 20
     });
 
     document.body.appendChild(enemy);
@@ -147,6 +147,7 @@ for (let i = 0; i < 5; i++) {
 function gameLoop() {
     if (gameOver || !gameStarted) return;
 
+    // 🧍 hareket
     if (keys.left) vx -= accel;
     if (keys.right) vx += accel;
     if (keys.up) vy -= accel;
@@ -158,9 +159,16 @@ function gameLoop() {
     x += vx;
     y += vy;
 
+    // 🧱 SINIR KONTROLÜ (EN ÖNEMLİ FIX)
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+    if (x > window.innerWidth - 20) x = window.innerWidth - 20;
+    if (y > window.innerHeight - 20) y = window.innerHeight - 20;
+
     player.style.left = x + "px";
     player.style.top = y + "px";
 
+    // 👾 düşmanlar
     enemies.forEach(e => {
         e.x += e.vx;
         e.y += e.vy;
@@ -171,6 +179,7 @@ function gameLoop() {
         e.el.style.left = e.x + "px";
         e.el.style.top = e.y + "px";
 
+        // 💥 çarpışma
         if (
             x < e.x + 20 &&
             x + 20 > e.x &&
