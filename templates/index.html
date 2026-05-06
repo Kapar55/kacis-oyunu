@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kaçış Oyunu</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+        }
+
+        #player {
+            width: 20px;
+            height: 20px;
+            background: cyan;
+            position: absolute;
+            display: none;
+        }
+
+        .enemy {
+            width: 20px;
+            height: 20px;
+            background: red;
+            position: absolute;
+        }
+
+        #score {
+            color: white;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-family: Arial;
+            font-size: 16px;
+            display: none;
+        }
+
+        #menu {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div id="menu">
+    <h1>Kaçış Oyunu</h1>
+    <button onclick="startGame()">BAŞLA</button>
+</div>
+
+<div id="player"></div>
+<div id="score">Skor: 0</div>
+
+<script>
+let player = document.getElementById("player");
+let scoreEl = document.getElementById("score");
+let menu = document.getElementById("menu");
+
+let x = 300;
+let y = 200;
+
+let vx = 0;
+let vy = 0;
+let accel = 0.6;
+let friction = 0.85;
+
+let score = 0;
+let gameOver = false;
+let gameStarted = false;
+
+let enemies = [];
+
+let keys = {
+    left: false,
+    right: false,
+    up: false,
+    down: false
+};
+
+function startGame() {
+    menu.style.display = "none";
+    player.style.display = "block";
+    scoreEl.style.display = "block";
+
+    gameStarted = true;
+    gameLoop();
+}
+
+// 🎮 input
+document.addEventListener("keydown", (e) => {
+    if (!gameStarted) return;
+
+    if (e.key === "ArrowLeft") keys.left = true;
+    if (e.key === "ArrowRight") keys.right = true;
+    if (e.key === "ArrowUp") keys.up = true;
+    if (e.key === "ArrowDown") keys.down = true;
+});
+
+document.addEventListener("keyup", (e) => {
+    if (!gameStarted) return;
+
+    if (e.key === "ArrowLeft") keys.left = false;
+    if (e.key === "ArrowRight") keys.right = false;
+    if (e.key === "ArrowUp") keys.up = false;
+    if (e.key === "ArrowDown") keys.down = false;
+});
+
+// 👾 enemy
+function spawnEnemy() {
+    let enemy = document.createElement("div");
+    enemy.classList.add("enemy");
+
+    let ex = Math.random() * window.innerWidth;
+    let ey = Math.random() * window.innerHeight;
+
+    enemy.style.left = ex + "px";
+    enemy.style.top = ey + "px";
+
+    enemies.push({
+        el: enemy,
+        x: ex,
+        y: ey,
+        vx: (Math.random() - 0.5) * 3,
+        vy: (Math.random() - 0.5) * 3
+    });
+
+    document.body.appendChild(enemy);
+}
+
+// başlangıç düşmanları
+for (let i = 0; i < 5; i++) {
+    spawnEnemy();
+}
+
+function gameLoop() {
+    if (gameOver || !gameStarted) return;
+
+    // player physics
+    if (keys.left) vx -= accel;
+    if (keys.right) vx += accel;
+    if (keys.up) vy -= accel;
+    if (keys.down) vy += accel;
+
+    vx *= friction;
+    vy *= friction;
+
+    x += vx;
+    y += vy;
+
+    // sınırlar
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+    if (x > window.innerWidth - 20) x = window.innerWidth - 20;
+    if (y > window.innerHeight - 20) y = window.innerHeight - 20;
+
+    player.style.left = x + "px";
+    player.style.top = y + "px";
+
+    // enemies
+    enemies.forEach(e => {
+        e.x += e.vx;
+        e.y += e.vy;
+
+        if (e.x < 0 || e.x > window.innerWidth) e.vx *= -1;
+        if (e.y < 0 || e.y > window.innerHeight) e.vy *= -1;
+
+        e.el.style.left = e.x + "px";
+        e.el.style.top = e.y + "px";
+
+        // collision
+        if (
+            x < e.x + 20 &&
+            x + 20 > e.x &&
+            y < e.y + 20 &&
+            y + 20 > e.y
+        ) {
+            gameOver = true;
+
+            // 💀 GAME OVER ekranı
+            document.body.innerHTML = `
+                <div style="
+                    color:white;
+                    background:black;
+                    width:100%;
+                    height:100vh;
+                    display:flex;
+                    justify-content:center;
+                    align-items:center;
+                    flex-direction:column;
+                    font-family:Arial;
+                ">
+                    <h1>OYUN BİTTİ</h1>
+                    <h2>Skor: ${score}</h2>
+                    <button onclick="location.reload()">TEKRAR OYNA</button>
+                </div>
+            `;
+        }
+    });
+
+    // score
+    score++;
+    scoreEl.innerText = "Skor: " + score;
+
+    // difficulty
+    if (score % 300 === 0) {
+        spawnEnemy();
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+</script>
+
+</body>
+</html>
