@@ -117,7 +117,7 @@ document.addEventListener("keyup", (e) => {
     if (e.key === "ArrowDown") keys.down = false;
 });
 
-// 👾 düşman oluştur
+// 👾 düşman
 function spawnEnemy() {
     let enemy = document.createElement("div");
     enemy.classList.add("enemy");
@@ -132,8 +132,8 @@ function spawnEnemy() {
         el: enemy,
         x: ex,
         y: ey,
-        vx: (Math.random() - 0.5) * 9, // 🔥 HIZ 9
-        vy: (Math.random() - 0.5) * 9  // 🔥 HIZ 9
+        vx: (Math.random() - 0.5) * 15, // 🔥 HIZ 15
+        vy: (Math.random() - 0.5) * 15  // 🔥 HIZ 15
     });
 
     document.body.appendChild(enemy);
@@ -147,7 +147,6 @@ for (let i = 0; i < 5; i++) {
 function gameLoop() {
     if (gameOver || !gameStarted) return;
 
-    // player hareket
     if (keys.left) vx -= accel;
     if (keys.right) vx += accel;
     if (keys.up) vy -= accel;
@@ -162,7 +161,6 @@ function gameLoop() {
     player.style.left = x + "px";
     player.style.top = y + "px";
 
-    // düşmanlar
     enemies.forEach(e => {
         e.x += e.vx;
         e.y += e.vy;
@@ -173,7 +171,6 @@ function gameLoop() {
         e.el.style.left = e.x + "px";
         e.el.style.top = e.y + "px";
 
-        // çarpışma
         if (
             x < e.x + 20 &&
             x + 20 > e.x &&
