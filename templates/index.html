@@ -156,6 +156,10 @@ const friction=0.9;
 const keys={};
 const enemies=[];
 
+// ---------------- FPS FIX ----------------
+
+let lastTime = performance.now();
+
 // ---------------- SPAWN ----------------
 
 function spawnEnemy(){
@@ -189,83 +193,18 @@ setInterval(()=>{
     if(gameStarted) spawnEnemy();
 },3000);
 
-// ---------------- SUPABASE ----------------
-
-async function loadBest(){
-
-    const { data }=await supabase
-        .from("leaderboard")
-        .select("*");
-
-    if(!data || data.length===0){
-        bestEl.innerText="En Yüksek: 0";
-        return;
-    }
-
-    let best=data.sort((a,b)=>b.score-a.score)[0];
-
-    bestEl.innerText="En Yüksek: "+best.name+" - "+best.score;
-}
-
-async function sendScore(s){
-
-    await supabase
-        .from("leaderboard")
-        .insert([{name:username,score:s}]);
-
-    loadBest();
-}
-
-// ---------------- GAME ----------------
-
-function startGame(){
-
-    username=document.getElementById("username").value||"Anon";
-
-    menu.style.display="none";
-
-    player.style.display="block";
-    scoreEl.style.display="block";
-
-    gameStarted=true;
-    score=0;
-
-    let r = hazard.getBoundingClientRect();
-
-    x = innerWidth/2;
-    y = r.top - 60;
-
-    vx=0;
-    vy=0;
-
-    loadBest();
-    loop();
-}
-
-window.startGame=startGame;
-
-// ---------------- CONTROLS ----------------
-
-document.addEventListener("keydown",(e)=>{
-    if(e.key==="ArrowLeft") keys.left=true;
-    if(e.key==="ArrowRight") keys.right=true;
-    if(e.key==="ArrowUp") keys.up=true;
-    if(e.key==="ArrowDown") keys.down=true;
-});
-
-document.addEventListener("keyup",(e)=>{
-    if(e.key==="ArrowLeft") keys.left=false;
-    if(e.key==="ArrowRight") keys.right=false;
-    if(e.key==="ArrowUp") keys.up=false;
-    if(e.key==="ArrowDown") keys.down=false;
-});
-
 // ---------------- LOOP ----------------
 
 function loop(){
 
     if(!gameStarted) return;
 
+    // FPS DELTA
+    let now = performance.now();
+    let dt = (now - lastTime) / 16.67;
+    lastTime = now;
+
+    // PLAYER INPUT
     if(keys.left) vx-=accel;
     if(keys.right) vx+=accel;
     if(keys.up) vy-=accel;
@@ -274,8 +213,8 @@ function loop(){
     vx*=friction;
     vy*=friction;
 
-    x+=vx;
-    y+=vy;
+    x += vx * dt;
+    y += vy * dt;
 
     if(x<0) x=0;
     if(y<0) y=0;
@@ -289,13 +228,13 @@ function loop(){
 
     enemies.forEach((e)=>{
 
-        e.x+=e.vx;
-        e.y+=e.vy;
+        e.x += e.vx * dt;
+        e.y += e.vy * dt;
 
         if(e.x<0||e.x>innerWidth) e.vx*=-1;
         if(e.y<0||e.y>innerHeight) e.vy*=-1;
 
-        // 🟥 hazard bounce
+        // hazard bounce
         if(
             e.x < h.left + h.width &&
             e.x + 22 > h.left &&
@@ -322,7 +261,7 @@ function loop(){
         }
     });
 
-    // hazard player death
+    // hazard death
     if(
         x < h.left + h.width &&
         x + 22 > h.left &&
@@ -344,7 +283,9 @@ function gameOver(){
 
     gameStarted=false;
 
-    sendScore(score);
+    supabase.from("leaderboard").insert([
+        {name:username,score:score}
+    ]);
 
     menu.style.display="flex";
 
@@ -353,6 +294,65 @@ function gameOver(){
         <h2>Skor: ${score}</h2>
         <button onclick="location.reload()">TEKRAR</button>
     `;
+}
+
+// ---------------- START ----------------
+
+function startGame(){
+
+    username=document.getElementById("username").value||"Anon";
+
+    menu.style.display="none";
+
+    player.style.display="block";
+    scoreEl.style.display="block";
+
+    gameStarted=true;
+    score=0;
+
+    let r = hazard.getBoundingClientRect();
+
+    x = innerWidth/2;
+    y = r.top - 60;
+
+    vx=0;
+    vy=0;
+
+    loop();
+}
+
+window.startGame=startGame;
+
+// ---------------- CONTROLS ----------------
+
+document.addEventListener("keydown",(e)=>{
+    if(e.key==="ArrowLeft") keys.left=true;
+    if(e.key==="ArrowRight") keys.right=true;
+    if(e.key==="ArrowUp") keys.up=true;
+    if(e.key==="ArrowDown") keys.down=true;
+});
+
+document.addEventListener("keyup",(e)=>{
+    if(e.key==="ArrowLeft") keys.left=false;
+    if(e.key==="ArrowRight") keys.right=false;
+    if(e.key==="ArrowUp") keys.up=false;
+    if(e.key==="ArrowDown") keys.down=false;
+});
+
+// ---------------- BEST SCORE ----------------
+
+async function loadBest(){
+
+    let { data } = await supabase.from("leaderboard").select("*");
+
+    if(!data || data.length===0){
+        bestEl.innerText="En Yüksek: 0";
+        return;
+    }
+
+    let best=data.sort((a,b)=>b.score-a.score)[0];
+
+    bestEl.innerText="En Yüksek: "+best.name+" - "+best.score;
 }
 
 loadBest();
