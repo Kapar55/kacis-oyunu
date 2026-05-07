@@ -114,7 +114,7 @@ button{
 
 <div id="player"></div>
 <div id="score">Skor: 0</div>
-<div id="best">Yükleniyor...</div>
+<div id="best">En Yüksek: Yükleniyor...</div>
 
 <script type="module">
 
@@ -126,11 +126,9 @@ const supabase = createClient(
 );
 
 // ---------------- SPEED ----------------
-
 const speed = 5;
 
 // ---------------- ELEMENTS ----------------
-
 const player=document.getElementById("player");
 const scoreEl=document.getElementById("score");
 const bestEl=document.getElementById("best");
@@ -139,7 +137,6 @@ const hazard=document.getElementById("hazard");
 
 let username="";
 let gameStarted=false;
-
 let score=0;
 
 let x=0;
@@ -148,30 +145,55 @@ let y=0;
 const keys={};
 const enemies=[];
 
-// ---------------- SPAWN ----------------
+// ---------------- MOBILE JOYSTICK ----------------
+let joyActive=false;
+let joyX=0;
+let joyY=0;
+let joyCenterX=0;
+let joyCenterY=0;
 
+document.addEventListener("touchstart",(e)=>{
+    let t=e.touches[0];
+    joyActive=true;
+    joyCenterX=t.clientX;
+    joyCenterY=t.clientY;
+    joyX=t.clientX;
+    joyY=t.clientY;
+});
+
+document.addEventListener("touchmove",(e)=>{
+    let t=e.touches[0];
+    joyX=t.clientX;
+    joyY=t.clientY;
+});
+
+document.addEventListener("touchend",()=>{
+    joyActive=false;
+});
+
+// ---------------- SPAWN ----------------
 function spawnEnemy(){
 
     let e=document.createElement("div");
     e.className="enemy";
 
-    let leftPortal = document.getElementById("leftPortal").getBoundingClientRect();
-    let rightPortal = document.getElementById("rightPortal").getBoundingClientRect();
+    let leftPortal=document.getElementById("leftPortal").getBoundingClientRect();
+    let rightPortal=document.getElementById("rightPortal").getBoundingClientRect();
 
-    let side = Math.random() < 0.5 ? "left" : "right";
+    let side=Math.random()<0.5?"left":"right";
 
-    if(side === "left"){
-        e.x = leftPortal.left;
-        e.y = leftPortal.top + leftPortal.height/2 - 11;
-    } else {
-        e.x = rightPortal.left;
-        e.y = rightPortal.top + rightPortal.height/2 - 11;
+    if(side==="left"){
+        e.x=leftPortal.left;
+        e.y=leftPortal.top+leftPortal.height/2-11;
+    }else{
+        e.x=rightPortal.left;
+        e.y=rightPortal.top+rightPortal.height/2-11;
     }
 
-    let angle = Math.random() * Math.PI * 2;
+    let angle=Math.random()*Math.PI*2;
 
-    e.vx = Math.cos(angle) * 4.5;
-    e.vy = Math.sin(angle) * 4.5;
+    e.vx=Math.cos(angle)*4.5;
+    e.vy=Math.sin(angle)*4.5;
 
     enemies.push(e);
     document.body.appendChild(e);
@@ -182,7 +204,6 @@ setInterval(()=>{
 },3000);
 
 // ---------------- LOOP ----------------
-
 function loop(){
 
     if(!gameStarted) return;
@@ -190,10 +211,31 @@ function loop(){
     let vx=0;
     let vy=0;
 
-    if(keys.left) vx=-speed;
-    if(keys.right) vx=speed;
-    if(keys.up) vy=-speed;
-    if(keys.down) vy=speed;
+    // 📱 joystick
+    if(joyActive){
+
+        let dx=joyX-joyCenterX;
+        let dy=joyY-joyCenterY;
+
+        let dist=Math.sqrt(dx*dx+dy*dy);
+        let max=60;
+
+        if(dist>max){
+            dx=(dx/dist)*max;
+            dy=(dy/dist)*max;
+        }
+
+        vx=dx/max*speed;
+        vy=dy/max*speed;
+    }
+
+    // 💻 keyboard
+    else{
+        if(keys.left) vx=-speed;
+        if(keys.right) vx=speed;
+        if(keys.up) vy=-speed;
+        if(keys.down) vy=speed;
+    }
 
     x+=vx;
     y+=vy;
@@ -206,9 +248,9 @@ function loop(){
     player.style.left=x+"px";
     player.style.top=y+"px";
 
-    let h = hazard.getBoundingClientRect();
+    let h=hazard.getBoundingClientRect();
 
-    enemies.forEach((e)=>{
+    enemies.forEach(e=>{
 
         e.x+=e.vx;
         e.y+=e.vy;
@@ -217,33 +259,33 @@ function loop(){
         if(e.y<0||e.y>innerHeight) e.vy*=-1;
 
         if(
-            e.x < h.left + h.width &&
-            e.x + 22 > h.left &&
-            e.y < h.top + h.height &&
-            e.y + 22 > h.top
+            e.x<h.left+h.width &&
+            e.x+22>h.left &&
+            e.y<h.top+h.height &&
+            e.y+22>h.top
         ){
-            e.vx *= -1;
-            e.vy *= -1;
+            e.vx*=-1;
+            e.vy*=-1;
         }
 
         e.style.left=e.x+"px";
         e.style.top=e.y+"px";
 
         if(
-            x < e.x + 22 &&
-            x + 22 > e.x &&
-            y < e.y + 22 &&
-            y + 22 > e.y
+            x<e.x+22 &&
+            x+22>e.x &&
+            y<e.y+22 &&
+            y+22>e.y
         ){
             gameOver();
         }
     });
 
     if(
-        x < h.left + h.width &&
-        x + 22 > h.left &&
-        y < h.top + h.height &&
-        y + 22 > h.top
+        x<h.left+h.width &&
+        x+22>h.left &&
+        y<h.top+h.height &&
+        y+22>h.top
     ){
         gameOver();
     }
@@ -255,39 +297,37 @@ function loop(){
 }
 
 // ---------------- START ----------------
-
 function startGame(){
 
     username=document.getElementById("username").value||"Anon";
 
     menu.style.display="none";
-
     player.style.display="block";
     scoreEl.style.display="block";
 
     gameStarted=true;
     score=0;
 
-    let r = hazard.getBoundingClientRect();
+    let r=hazard.getBoundingClientRect();
 
-    x = innerWidth/2;
-    y = r.top - 60;
+    x=innerWidth/2;
+    y=r.top-60;
 
+    loadBest();
     loop();
 }
 
 window.startGame=startGame;
 
 // ---------------- CONTROLS ----------------
-
-document.addEventListener("keydown",(e)=>{
+document.addEventListener("keydown",e=>{
     if(e.key==="ArrowLeft") keys.left=true;
     if(e.key==="ArrowRight") keys.right=true;
     if(e.key==="ArrowUp") keys.up=true;
     if(e.key==="ArrowDown") keys.down=true;
 });
 
-document.addEventListener("keyup",(e)=>{
+document.addEventListener("keyup",e=>{
     if(e.key==="ArrowLeft") keys.left=false;
     if(e.key==="ArrowRight") keys.right=false;
     if(e.key==="ArrowUp") keys.up=false;
@@ -295,20 +335,14 @@ document.addEventListener("keyup",(e)=>{
 });
 
 // ---------------- LEADERBOARD FIX ----------------
-
 async function loadBest(){
 
     try{
-        let { data, error } = await supabase
+        const { data, error } = await supabase
             .from("leaderboard")
             .select("*");
 
-        if(error){
-            bestEl.innerText="En Yüksek: (DB Hatası)";
-            return;
-        }
-
-        if(!data || data.length===0){
+        if(error || !data || data.length===0){
             bestEl.innerText="En Yüksek: 0";
             return;
         }
@@ -318,14 +352,13 @@ async function loadBest(){
         bestEl.innerText="En Yüksek: "+best.name+" - "+best.score;
     }
     catch(e){
-        bestEl.innerText="En Yüksek: (Bağlantı Hatası)";
+        bestEl.innerText="En Yüksek: 0";
     }
 }
 
 loadBest();
 
 // ---------------- GAME OVER ----------------
-
 function gameOver(){
 
     gameStarted=false;
