@@ -102,12 +102,11 @@ let vx = 0;
 let vy = 0;
 
 let accel = 0.6;
-let friction = 0.85;
+let friction = 0.90;
 
 let score = 0;
 
 let gameStarted = false;
-let gameOver = false;
 
 let enemies = [];
 
@@ -118,23 +117,19 @@ let keys = {
     down: false
 };
 
-//
-// 🏆 SKOR ÇEK
-//
+// 🏆 skor
 fetch("/get_score")
-.then(res => res.json())
-.then(data => {
+.then(r => r.json())
+.then(d => {
     document.getElementById("best").innerText =
-        "En Yüksek: " + data.name + " - " + data.score;
+        "En Yüksek: " + d.name + " - " + d.score;
 })
 .catch(() => {
     document.getElementById("best").innerText =
         "En Yüksek: 0";
 });
 
-//
-// 📤 SKOR GÖNDER
-//
+// 📤 skor gönder
 function sendScore(finalScore) {
 
     fetch("/set_score", {
@@ -145,16 +140,14 @@ function sendScore(finalScore) {
             score: finalScore
         })
     })
-    .then(res => res.json())
-    .then(data => {
+    .then(r => r.json())
+    .then(d => {
         document.getElementById("best").innerText =
-            "En Yüksek: " + data.name + " - " + data.score;
+            "En Yüksek: " + d.name + " - " + d.score;
     });
 }
 
-//
-// ▶️ OYUN BAŞLAT
-//
+// ▶️ başlat
 function startGame() {
 
     username = document.getElementById("username").value || "Anon";
@@ -164,12 +157,11 @@ function startGame() {
     scoreEl.style.display = "block";
 
     gameStarted = true;
+
     gameLoop();
 }
 
-//
-// ⌨️ PC KONTROL
-//
+// ⌨️ PC kontrol
 document.addEventListener("keydown", (e) => {
     if (!gameStarted) return;
 
@@ -189,9 +181,12 @@ document.addEventListener("keyup", (e) => {
 });
 
 //
-// 📱 MOBİL GİZLİ KONTROL
+// 📱 YUMUŞAK MOBİL KONTROL (SON HAL)
 //
 let touchActive = false;
+
+let targetVX = 0;
+let targetVY = 0;
 
 document.addEventListener("touchstart", () => {
     if (!gameStarted) return;
@@ -200,10 +195,14 @@ document.addEventListener("touchstart", () => {
 
 document.addEventListener("touchend", () => {
     touchActive = false;
+    targetVX = 0;
+    targetVY = 0;
 });
 
 document.addEventListener("touchcancel", () => {
     touchActive = false;
+    targetVX = 0;
+    targetVY = 0;
 });
 
 document.addEventListener("touchmove", (e) => {
@@ -211,14 +210,14 @@ document.addEventListener("touchmove", (e) => {
 
     let t = e.touches[0];
 
-    let centerX = window.innerWidth / 2;
-    let centerY = window.innerHeight / 2;
+    let cx = window.innerWidth / 2;
+    let cy = window.innerHeight / 2;
 
-    let dx = t.clientX - centerX;
-    let dy = t.clientY - centerY;
+    let dx = (t.clientX - cx);
+    let dy = (t.clientY - cy);
 
-    vx += dx * 0.0015;
-    vy += dy * 0.0015;
+    targetVX = dx * 0.003;
+    targetVY = dy * 0.003;
 
     e.preventDefault();
 }, { passive: false });
@@ -248,9 +247,7 @@ function spawnEnemy() {
     document.body.appendChild(enemy);
 }
 
-for (let i = 0; i < 5; i++) {
-    spawnEnemy();
-}
+for (let i = 0; i < 5; i++) spawnEnemy();
 
 //
 // 🎮 GAME LOOP
@@ -259,10 +256,15 @@ function gameLoop() {
 
     if (!gameStarted) return;
 
+    // 💻 klavye
     if (keys.left) vx -= accel;
     if (keys.right) vx += accel;
     if (keys.up) vy -= accel;
     if (keys.down) vy += accel;
+
+    // 📱 mobil yumuşak kontrol
+    vx += targetVX;
+    vy += targetVY;
 
     vx *= friction;
     vy *= friction;
@@ -270,6 +272,7 @@ function gameLoop() {
     x += vx;
     y += vy;
 
+    // sınırlar
     if (x < 0) x = 0;
     if (y < 0) y = 0;
 
