@@ -9,6 +9,7 @@
             overflow: hidden;
             background: black;
             touch-action: none;
+            overscroll-behavior: none;
             font-family: Arial;
         }
 
@@ -78,16 +79,12 @@
 
 <div id="menu">
     <h1>Kaçış Oyunu</h1>
-
     <input id="username" placeholder="Kullanıcı adı">
-
     <button onclick="startGame()">BAŞLA</button>
 </div>
 
 <div id="player"></div>
-
 <div id="score">Skor: 0</div>
-
 <div id="best">En Yüksek: Yükleniyor...</div>
 
 <script>
@@ -109,8 +106,8 @@ let friction = 0.85;
 
 let score = 0;
 
-let gameOver = false;
 let gameStarted = false;
+let gameOver = false;
 
 let enemies = [];
 
@@ -121,7 +118,9 @@ let keys = {
     down: false
 };
 
-// 🏆 skor çek
+//
+// 🏆 SKOR ÇEK
+//
 fetch("/get_score")
 .then(res => res.json())
 .then(data => {
@@ -133,75 +132,100 @@ fetch("/get_score")
         "En Yüksek: 0";
 });
 
-// 📤 skor gönder
+//
+// 📤 SKOR GÖNDER
+//
 function sendScore(finalScore) {
 
     fetch("/set_score", {
-
         method: "POST",
-
-        headers: {
-            "Content-Type": "application/json"
-        },
-
+        headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
             name: username,
             score: finalScore
         })
-
     })
-
     .then(res => res.json())
-
     .then(data => {
-
         document.getElementById("best").innerText =
             "En Yüksek: " + data.name + " - " + data.score;
-
     });
 }
 
-// ▶️ başlat
+//
+// ▶️ OYUN BAŞLAT
+//
 function startGame() {
 
-    username =
-        document.getElementById("username").value || "Anon";
+    username = document.getElementById("username").value || "Anon";
 
     menu.style.display = "none";
-
     player.style.display = "block";
-
     scoreEl.style.display = "block";
 
     gameStarted = true;
-
     gameLoop();
 }
 
-// ⌨️ klavye
+//
+// ⌨️ PC KONTROL
+//
 document.addEventListener("keydown", (e) => {
-
     if (!gameStarted) return;
 
     if (e.key === "ArrowLeft") keys.left = true;
     if (e.key === "ArrowRight") keys.right = true;
     if (e.key === "ArrowUp") keys.up = true;
     if (e.key === "ArrowDown") keys.down = true;
-
 });
 
 document.addEventListener("keyup", (e) => {
-
     if (!gameStarted) return;
 
     if (e.key === "ArrowLeft") keys.left = false;
     if (e.key === "ArrowRight") keys.right = false;
     if (e.key === "ArrowUp") keys.up = false;
     if (e.key === "ArrowDown") keys.down = false;
-
 });
 
-// 👾 düşman
+//
+// 📱 MOBİL GİZLİ KONTROL
+//
+let touchActive = false;
+
+document.addEventListener("touchstart", () => {
+    if (!gameStarted) return;
+    touchActive = true;
+});
+
+document.addEventListener("touchend", () => {
+    touchActive = false;
+});
+
+document.addEventListener("touchcancel", () => {
+    touchActive = false;
+});
+
+document.addEventListener("touchmove", (e) => {
+    if (!gameStarted || !touchActive) return;
+
+    let t = e.touches[0];
+
+    let centerX = window.innerWidth / 2;
+    let centerY = window.innerHeight / 2;
+
+    let dx = t.clientX - centerX;
+    let dy = t.clientY - centerY;
+
+    vx += dx * 0.0015;
+    vy += dy * 0.0015;
+
+    e.preventDefault();
+}, { passive: false });
+
+//
+// 👾 DÜŞMAN
+//
 function spawnEnemy() {
 
     let enemy = document.createElement("div");
@@ -228,10 +252,12 @@ for (let i = 0; i < 5; i++) {
     spawnEnemy();
 }
 
-// 🎮 oyun
+//
+// 🎮 GAME LOOP
+//
 function gameLoop() {
 
-    if (gameOver || !gameStarted) return;
+    if (!gameStarted) return;
 
     if (keys.left) vx -= accel;
     if (keys.right) vx += accel;
@@ -261,11 +287,8 @@ function gameLoop() {
         e.x += e.vx;
         e.y += e.vy;
 
-        if (e.x < 0 || e.x > window.innerWidth)
-            e.vx *= -1;
-
-        if (e.y < 0 || e.y > window.innerHeight)
-            e.vy *= -1;
+        if (e.x < 0 || e.x > window.innerWidth) e.vx *= -1;
+        if (e.y < 0 || e.y > window.innerHeight) e.vy *= -1;
 
         e.el.style.left = e.x + "px";
         e.el.style.top = e.y + "px";
@@ -277,28 +300,23 @@ function gameLoop() {
             y + 20 > e.y
         ) {
 
-            gameOver = true;
             gameStarted = false;
 
             sendScore(score);
 
             menu.style.display = "flex";
-
             menu.innerHTML = `
                 <h1>OYUN BİTTİ</h1>
                 <h2>Skor: ${score}</h2>
                 <button onclick="location.reload()">TEKRAR OYNA</button>
             `;
         }
-
     });
 
     score++;
     scoreEl.innerText = "Skor: " + score;
 
-    if (score % 300 === 0) {
-        spawnEnemy();
-    }
+    if (score % 300 === 0) spawnEnemy();
 
     requestAnimationFrame(gameLoop);
 }
