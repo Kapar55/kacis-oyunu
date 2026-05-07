@@ -13,7 +13,6 @@ body{
     background: radial-gradient(circle at center, #0a0a0a, #000);
 }
 
-/* PLAYER */
 #player{
     width:22px;
     height:22px;
@@ -24,7 +23,6 @@ body{
     display:none;
 }
 
-/* ENEMY */
 .enemy{
     width:22px;
     height:22px;
@@ -34,7 +32,6 @@ body{
     box-shadow:0 0 10px red;
 }
 
-/* PORTALS */
 .portal{
     position:absolute;
     width:60px;
@@ -49,7 +46,6 @@ body{
 #leftPortal{ left:10px; }
 #rightPortal{ right:10px; }
 
-/* HAZARD */
 #hazard{
     position:absolute;
     width:120px;
@@ -62,7 +58,6 @@ body{
     opacity:0.6;
 }
 
-/* UI */
 #score,#best{
     position:absolute;
     left:10px;
@@ -74,7 +69,6 @@ body{
 #score{ top:10px; display:none; }
 #best{ top:40px; }
 
-/* MENU */
 #menu{
     position:absolute;
     width:100%;
@@ -131,7 +125,11 @@ const supabase = createClient(
     "sb_publishable_E5sJ-sNHdSTryFbYcJMHFA_3CYHvPVE"
 );
 
-// ---------------- ELEMENTLER ----------------
+// ---------------- SPEED ----------------
+
+const speed = 5;
+
+// ---------------- ELEMENTS ----------------
 
 const player=document.getElementById("player");
 const scoreEl=document.getElementById("score");
@@ -147,18 +145,8 @@ let score=0;
 let x=0;
 let y=0;
 
-let vx=0;
-let vy=0;
-
-const accel=0.7;
-const friction=0.9;
-
 const keys={};
 const enemies=[];
-
-// ---------------- FPS FIX ----------------
-
-let lastTime = performance.now();
 
 // ---------------- SPAWN ----------------
 
@@ -182,8 +170,8 @@ function spawnEnemy(){
 
     let angle = Math.random() * Math.PI * 2;
 
-    e.vx = Math.cos(angle) * 3;
-    e.vy = Math.sin(angle) * 3;
+    e.vx = Math.cos(angle) * 4.5;
+    e.vy = Math.sin(angle) * 4.5;
 
     enemies.push(e);
     document.body.appendChild(e);
@@ -199,22 +187,16 @@ function loop(){
 
     if(!gameStarted) return;
 
-    // FPS DELTA
-    let now = performance.now();
-    let dt = (now - lastTime) / 16.67;
-    lastTime = now;
+    let vx=0;
+    let vy=0;
 
-    // PLAYER INPUT
-    if(keys.left) vx-=accel;
-    if(keys.right) vx+=accel;
-    if(keys.up) vy-=accel;
-    if(keys.down) vy+=accel;
+    if(keys.left) vx=-speed;
+    if(keys.right) vx=speed;
+    if(keys.up) vy=-speed;
+    if(keys.down) vy=speed;
 
-    vx*=friction;
-    vy*=friction;
-
-    x += vx * dt;
-    y += vy * dt;
+    x+=vx;
+    y+=vy;
 
     if(x<0) x=0;
     if(y<0) y=0;
@@ -228,13 +210,12 @@ function loop(){
 
     enemies.forEach((e)=>{
 
-        e.x += e.vx * dt;
-        e.y += e.vy * dt;
+        e.x+=e.vx;
+        e.y+=e.vy;
 
         if(e.x<0||e.x>innerWidth) e.vx*=-1;
         if(e.y<0||e.y>innerHeight) e.vy*=-1;
 
-        // hazard bounce
         if(
             e.x < h.left + h.width &&
             e.x + 22 > h.left &&
@@ -243,14 +224,11 @@ function loop(){
         ){
             e.vx *= -1;
             e.vy *= -1;
-            e.x += e.vx * 2;
-            e.y += e.vy * 2;
         }
 
         e.style.left=e.x+"px";
         e.style.top=e.y+"px";
 
-        // player collision
         if(
             x < e.x + 22 &&
             x + 22 > e.x &&
@@ -261,7 +239,6 @@ function loop(){
         }
     });
 
-    // hazard death
     if(
         x < h.left + h.width &&
         x + 22 > h.left &&
@@ -275,25 +252,6 @@ function loop(){
     scoreEl.innerText="Skor: "+score;
 
     requestAnimationFrame(loop);
-}
-
-// ---------------- GAME OVER ----------------
-
-function gameOver(){
-
-    gameStarted=false;
-
-    supabase.from("leaderboard").insert([
-        {name:username,score:score}
-    ]);
-
-    menu.style.display="flex";
-
-    menu.innerHTML=`
-        <h1>OYUN BİTTİ</h1>
-        <h2>Skor: ${score}</h2>
-        <button onclick="location.reload()">TEKRAR</button>
-    `;
 }
 
 // ---------------- START ----------------
@@ -314,9 +272,6 @@ function startGame(){
 
     x = innerWidth/2;
     y = r.top - 60;
-
-    vx=0;
-    vy=0;
 
     loop();
 }
@@ -339,23 +294,54 @@ document.addEventListener("keyup",(e)=>{
     if(e.key==="ArrowDown") keys.down=false;
 });
 
-// ---------------- BEST SCORE ----------------
+// ---------------- LEADERBOARD FIX ----------------
 
 async function loadBest(){
 
-    let { data } = await supabase.from("leaderboard").select("*");
+    try{
+        let { data, error } = await supabase
+            .from("leaderboard")
+            .select("*");
 
-    if(!data || data.length===0){
-        bestEl.innerText="En Yüksek: 0";
-        return;
+        if(error){
+            bestEl.innerText="En Yüksek: (DB Hatası)";
+            return;
+        }
+
+        if(!data || data.length===0){
+            bestEl.innerText="En Yüksek: 0";
+            return;
+        }
+
+        let best=data.sort((a,b)=>b.score-a.score)[0];
+
+        bestEl.innerText="En Yüksek: "+best.name+" - "+best.score;
     }
-
-    let best=data.sort((a,b)=>b.score-a.score)[0];
-
-    bestEl.innerText="En Yüksek: "+best.name+" - "+best.score;
+    catch(e){
+        bestEl.innerText="En Yüksek: (Bağlantı Hatası)";
+    }
 }
 
 loadBest();
+
+// ---------------- GAME OVER ----------------
+
+function gameOver(){
+
+    gameStarted=false;
+
+    supabase.from("leaderboard").insert([
+        {name:username,score:score}
+    ]);
+
+    menu.style.display="flex";
+
+    menu.innerHTML=`
+        <h1>OYUN BİTTİ</h1>
+        <h2>Skor: ${score}</h2>
+        <button onclick="location.reload()">TEKRAR</button>
+    `;
+}
 
 </script>
 
