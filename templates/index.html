@@ -43,8 +43,13 @@ body{
     box-shadow:0 0 20px red;
 }
 
-#leftPortal{ left:10px; }
-#rightPortal{ right:10px; }
+#leftPortal{
+    left:10px;
+}
+
+#rightPortal{
+    right:10px;
+}
 
 #hazard{
     position:absolute;
@@ -110,6 +115,7 @@ button{
 
 <div id="leftPortal" class="portal"></div>
 <div id="rightPortal" class="portal"></div>
+
 <div id="hazard"></div>
 
 <div id="menu">
@@ -274,8 +280,8 @@ function loop(){
     if(x < 0) x = 0;
     if(y < 0) y = 0;
 
-    if(x > innerWidth-22) x = innerWidth-22;
-    if(y > innerHeight-22) y = innerHeight-22;
+    if(x > innerWidth - 22) x = innerWidth - 22;
+    if(y > innerHeight - 22) y = innerHeight - 22;
 
     player.style.left = x + "px";
     player.style.top = y + "px";
@@ -449,6 +455,10 @@ function gameOver(){
 
     gameStarted = false;
 
+    // 👾 DÜŞMANLARI TEMİZLE
+    enemies.forEach(e=>e.remove());
+    enemies.length = 0;
+
     supabase.from("leaderboard").insert([
         {
             name:username,
@@ -466,7 +476,7 @@ function gameOver(){
 
         <h2>Skor: ${score}</h2>
 
-        <input 
+        <input
             id="username"
             placeholder="Kullanıcı adı"
             value="${username}"
