@@ -73,6 +73,7 @@ body{
 
 #best{
     top:40px;
+    line-height:1.5;
 }
 
 #menu{
@@ -123,7 +124,7 @@ button{
 
 <div id="score">Skor: 0</div>
 
-<div id="best">En Yüksek: Yükleniyor...</div>
+<div id="best">Yükleniyor...</div>
 
 <script type="module">
 
@@ -413,7 +414,7 @@ document.addEventListener("keyup",(e)=>{
     if(e.key==="ArrowDown") keys.down = false;
 });
 
-// 🏆 LEADERBOARD
+// 🏆 TOP 3 LEADERBOARD
 
 async function loadBest(){
 
@@ -421,20 +422,25 @@ async function loadBest(){
         .from("leaderboard")
         .select("name, score")
         .order("score",{ascending:false})
-        .limit(1);
+        .limit(3);
 
     if(!data || data.length===0){
 
-        bestEl.innerText = "En Yüksek: 0";
+        bestEl.innerHTML = "En Yüksek: 0";
 
         return;
     }
 
-    bestEl.innerText =
-        "En Yüksek: " +
-        data[0].name +
-        " - " +
-        data[0].score;
+    let text = "🏆 EN İYİ 3<br><br>";
+
+    data.forEach((player,index)=>{
+
+        text += `
+            ${index+1}. ${player.name} - ${player.score}<br>
+        `;
+    });
+
+    bestEl.innerHTML = text;
 }
 
 // 💀 GAME OVER
