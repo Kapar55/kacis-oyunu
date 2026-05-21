@@ -2,497 +2,749 @@
 <html>
 <head>
 <meta charset="UTF-8">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4703581619565871"
-     crossorigin="anonymous"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kaçış Oyunu</title>
-
 <style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;background:#050510;}
 
-body{
-    margin:0;
-    overflow:hidden;
-    font-family:Arial;
-    background:black;
-}
+canvas#bg{position:fixed;top:0;left:0;z-index:0;pointer-events:none;}
 
+/* OYUNCU */
 #player{
-    width:22px;
-    height:22px;
-    background:cyan;
-    position:absolute;
-    border-radius:50%;
-    box-shadow:0 0 15px cyan;
-    display:none;
+  width:24px;height:24px;background:cyan;position:absolute;
+  border-radius:50%;box-shadow:0 0 12px cyan,0 0 24px rgba(0,255,255,0.4);
+  display:none;z-index:10;transition:box-shadow 0.1s;
+}
+#player.shield{
+  background:white;
+  box-shadow:0 0 18px white,0 0 40px rgba(255,255,255,0.6);
 }
 
-.enemy{
-    width:22px;
-    height:22px;
-    background:red;
-    position:absolute;
-    border-radius:50%;
-    box-shadow:0 0 10px red;
+/* PORTALLER */
+.portal{position:absolute;width:56px;height:56px;top:50%;transform:translateY(-50%);
+  border-radius:50%;background:radial-gradient(circle,#000 30%,transparent 70%);
+  box-shadow:0 0 18px #ff2244;z-index:5;}
+#leftPortal{left:8px;}
+#rightPortal{right:8px;}
+
+/* TEHLİKE */
+#hazard{position:absolute;width:100px;height:100px;left:50%;top:50%;
+  transform:translate(-50%,-50%);border-radius:16px;
+  background:rgba(180,0,0,0.5);box-shadow:0 0 30px #ff0022,0 0 60px rgba(255,0,34,0.2);
+  z-index:5;}
+
+/* HUD */
+#hud{position:absolute;top:0;left:0;right:0;padding:12px 16px;
+  display:none;z-index:20;pointer-events:none;
+  display:none;flex-direction:row;align-items:center;gap:16px;}
+#hudScore{color:white;font-size:15px;font-weight:600;text-shadow:0 0 8px rgba(255,255,255,0.4);}
+#hudLevel{
+  background:rgba(0,255,255,0.1);border:1px solid rgba(0,255,255,0.3);
+  color:cyan;font-size:12px;font-weight:700;letter-spacing:2px;
+  padding:3px 10px;border-radius:20px;}
+#hudLives{margin-left:auto;display:flex;gap:6px;}
+.heart{font-size:18px;transition:opacity 0.3s;}
+.heart.dead{opacity:0.2;filter:grayscale(1);}
+
+/* LAZER BAR */
+#laserUI{
+  position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
+  display:none;flex-direction:column;align-items:center;gap:5px;z-index:20;}
+#laserLabel{color:cyan;font-size:10px;font-weight:700;letter-spacing:3px;text-shadow:0 0 6px cyan;}
+#laserTrack{width:140px;height:6px;background:rgba(0,255,255,0.1);
+  border:1px solid rgba(0,255,255,0.25);border-radius:3px;overflow:hidden;}
+#laserFill{height:100%;width:100%;background:cyan;box-shadow:0 0 4px cyan;border-radius:3px;}
+#laserKey{color:rgba(0,255,255,0.35);font-size:9px;letter-spacing:2px;}
+
+/* MOBİL KONTROLLER */
+#mobileControls{
+  position:fixed;bottom:0;left:0;right:0;height:200px;
+  display:none;pointer-events:none;z-index:30;
+}
+#joystickZone{
+  position:absolute;bottom:20px;left:24px;
+  width:130px;height:130px;
+  pointer-events:all;
+}
+#joystickBase{
+  position:absolute;inset:0;border-radius:50%;
+  background:rgba(255,255,255,0.05);
+  border:2px solid rgba(255,255,255,0.12);
+}
+#joystickKnob{
+  position:absolute;width:52px;height:52px;border-radius:50%;
+  background:rgba(0,255,255,0.25);border:2px solid rgba(0,255,255,0.5);
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  transition:transform 0.05s;box-shadow:0 0 12px rgba(0,255,255,0.3);
+}
+#fireBtn{
+  position:absolute;bottom:28px;right:28px;
+  width:78px;height:78px;border-radius:50%;
+  background:rgba(0,255,255,0.15);border:2px solid rgba(0,255,255,0.45);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;pointer-events:all;box-shadow:0 0 16px rgba(0,255,255,0.2);
+  -webkit-tap-highlight-color:transparent;user-select:none;
+}
+#fireBtn.active{background:rgba(0,255,255,0.35);border-color:cyan;}
+#fireBtnLabel{color:cyan;font-size:11px;font-weight:700;letter-spacing:2px;}
+#fireBtnIcon{color:cyan;font-size:22px;line-height:1;}
+#fireCooldownRing{
+  position:absolute;inset:-4px;border-radius:50%;
+  background:conic-gradient(cyan 0%, transparent 0%);
+  opacity:0.4;pointer-events:none;
 }
 
-.portal{
-    position:absolute;
-    width:60px;
-    height:60px;
-    top:50%;
-    transform:translateY(-50%);
-    border-radius:50%;
-    background:radial-gradient(circle, black 30%, transparent 70%);
-    box-shadow:0 0 20px red;
+/* POWERUP İTEMLERİ */
+.powerup{
+  position:absolute;width:20px;height:20px;border-radius:50%;
+  z-index:8;pointer-events:none;
+  animation:float 2s ease-in-out infinite alternate;
 }
+@keyframes float{from{transform:translateY(0)}to{transform:translateY(-6px)}}
 
-#leftPortal{
-    left:10px;
-}
-
-#rightPortal{
-    right:10px;
-}
-
-#hazard{
-    position:absolute;
-    width:120px;
-    height:120px;
-    background:red;
-    left:50%;
-    top:50%;
-    transform:translate(-50%,-50%);
-    box-shadow:0 0 25px red;
-    opacity:0.6;
-}
-
-#score,#best{
-    position:absolute;
-    left:10px;
-    color:red;
-    font-weight:bold;
-    text-shadow:0 0 10px red;
-}
-
-#score{
-    top:10px;
-    display:none;
-}
-
-#best{
-    top:40px;
-    line-height:1.5;
-}
-
+/* MENÜ */
 #menu{
-    position:absolute;
-    width:100%;
-    height:100%;
-    background:black;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    color:red;
-    gap:10px;
+  position:absolute;inset:0;background:#050510;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  gap:0;z-index:100;
 }
-
-input,button{
-    padding:10px;
-    border:none;
-    border-radius:8px;
-    font-size:16px;
+.menu-title{
+  font-size:42px;font-weight:800;letter-spacing:6px;
+  background:linear-gradient(135deg,cyan,#0066ff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  text-shadow:none;margin-bottom:6px;
 }
-
-button{
-    background:red;
-    color:black;
-    font-weight:bold;
-    cursor:pointer;
+.menu-sub{color:rgba(255,255,255,0.3);font-size:12px;letter-spacing:3px;margin-bottom:32px;}
+.menu-tips{
+  display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap;justify-content:center;
 }
+.tip{
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+  border-radius:10px;padding:8px 14px;color:rgba(255,255,255,0.5);font-size:11px;
+  display:flex;align-items:center;gap:6px;
+}
+.tip span{color:cyan;font-weight:700;}
+#usernameInput{
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+  color:white;padding:12px 20px;border-radius:12px;font-size:15px;
+  outline:none;width:220px;text-align:center;margin-bottom:14px;
+}
+#usernameInput::placeholder{color:rgba(255,255,255,0.25);}
+#startBtn{
+  background:linear-gradient(135deg,cyan,#0088ff);color:#000;
+  border:none;padding:13px 40px;border-radius:12px;
+  font-size:16px;font-weight:800;letter-spacing:2px;cursor:pointer;
+  transition:transform 0.1s,opacity 0.1s;
+}
+#startBtn:hover{transform:scale(1.04);}
+#startBtn:active{transform:scale(0.97);}
 
+/* LEADERBOARD */
+#board{
+  margin-top:28px;background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.07);border-radius:12px;
+  padding:14px 24px;min-width:220px;
+}
+.board-title{color:rgba(255,255,255,0.3);font-size:10px;letter-spacing:3px;margin-bottom:10px;text-align:center;}
+.board-row{display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.board-row:last-child{border-bottom:none;}
+.board-rank{color:rgba(255,255,255,0.25);font-size:12px;width:20px;}
+.board-name{color:rgba(255,255,255,0.7);font-size:13px;flex:1;padding:0 8px;}
+.board-score{color:cyan;font-size:13px;font-weight:700;}
+
+/* LEVEL BANNER */
+#levelBanner{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  color:white;font-size:28px;font-weight:800;letter-spacing:4px;
+  pointer-events:none;display:none;z-index:50;text-align:center;
+}
+#levelBanner .lvl-num{color:cyan;font-size:44px;display:block;text-shadow:0 0 20px cyan;}
+
+/* GAME OVER OVERLAY */
+#gameOverScreen{
+  position:absolute;inset:0;background:rgba(5,5,16,0.92);
+  display:none;flex-direction:column;justify-content:center;align-items:center;
+  z-index:100;gap:0;
+}
+.go-title{font-size:38px;font-weight:800;color:white;letter-spacing:4px;margin-bottom:4px;}
+.go-score{font-size:18px;color:rgba(255,255,255,0.5);margin-bottom:28px;}
+.go-score span{color:cyan;font-weight:700;}
+
+/* INVINCIBILITY FLASH */
+@keyframes invincFlash{0%,100%{opacity:1}50%{opacity:0.3}}
+#player.hit{animation:invincFlash 0.15s linear 6;}
 </style>
 </head>
-
 <body>
+
+<canvas id="bg"></canvas>
 
 <div id="leftPortal" class="portal"></div>
 <div id="rightPortal" class="portal"></div>
-
 <div id="hazard"></div>
 
-<div id="menu">
-    <h1>Kaçış Oyunu</h1>
-
-    <input id="username" placeholder="Kullanıcı adı">
-
-    <button onclick="startGame()">BAŞLA</button>
+<!-- HUD -->
+<div id="hud">
+  <div id="hudScore">Skor: 0</div>
+  <div id="hudLevel">SEVİYE 1</div>
+  <div id="hudLives">
+    <span class="heart" id="h1">❤️</span>
+    <span class="heart" id="h2">❤️</span>
+    <span class="heart" id="h3">❤️</span>
+  </div>
 </div>
 
 <div id="player"></div>
+<div id="levelBanner"></div>
 
-<div id="score">Skor: 0</div>
+<!-- LAZER UI -->
+<div id="laserUI">
+  <div id="laserLabel">LAZER ✓</div>
+  <div id="laserTrack"><div id="laserFill"></div></div>
+  <div id="laserKey">SPACE</div>
+</div>
 
-<div id="best">Yükleniyor...</div>
+<!-- MENÜ -->
+<div id="menu">
+  <div class="menu-title">KAÇIŞ</div>
+  <div class="menu-sub">HAYATTA KAL</div>
+  <div class="menu-tips">
+    <div class="tip">🎮 <span>WASD / Oklar</span> hareket</div>
+    <div class="tip">⚡ <span>SPACE</span> lazer ateşle</div>
+    <div class="tip">📱 <span>Joystick</span> mobil kontrol</div>
+    <div class="tip">💛 <span>Sarı item</span> kalkan</div>
+    <div class="tip">💙 <span>Mavi item</span> can yenile</div>
+  </div>
+  <input id="usernameInput" placeholder="Kullanıcı adı gir" maxlength="16">
+  <button id="startBtn" onclick="startGame()">BAŞLA</button>
+  <div id="board">
+    <div class="board-title">EN İYİ OYUNCULAR</div>
+    <div id="boardRows"><div style="color:rgba(255,255,255,0.2);font-size:12px;text-align:center;">Yükleniyor...</div></div>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div id="gameOverScreen">
+  <div class="go-title">OYUN BİTTİ</div>
+  <div class="go-score">Skor: <span id="goScore">0</span> &nbsp;|&nbsp; Seviye: <span id="goLevel">1</span></div>
+  <input id="usernameInput2" placeholder="Kullanıcı adı" maxlength="16"
+    style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:white;padding:12px 20px;border-radius:12px;font-size:15px;outline:none;width:220px;text-align:center;margin-bottom:14px;">
+  <button id="startBtn" onclick="restartGame()"
+    style="background:linear-gradient(135deg,cyan,#0088ff);color:#000;border:none;padding:13px 40px;border-radius:12px;font-size:16px;font-weight:800;letter-spacing:2px;cursor:pointer;">
+    TEKRAR OYNA
+  </button>
+  <div id="board2" style="margin-top:28px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:14px 24px;min-width:220px;">
+    <div class="board-title">EN İYİ OYUNCULAR</div>
+    <div id="boardRows2"><div style="color:rgba(255,255,255,0.2);font-size:12px;text-align:center;">Yükleniyor...</div></div>
+  </div>
+</div>
+
+<!-- MOBİL KONTROLLER -->
+<div id="mobileControls">
+  <div id="joystickZone">
+    <div id="joystickBase"></div>
+    <div id="joystickKnob"></div>
+  </div>
+  <div id="fireBtn">
+    <div id="fireCooldownRing"></div>
+    <div id="fireBtnIcon">⚡</div>
+    <div id="fireBtnLabel">LAZER</div>
+  </div>
+</div>
 
 <script type="module">
-
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
 const supabase = createClient(
-    "https://nerkibeevamzechepwio.supabase.co",
-    "sb_publishable_E5sJ-sNHdSTryFbYcJMHFA_3CYHvPVE"
+  "https://nerkibeevamzechepwio.supabase.co",
+  "sb_publishable_E5sJ-sNHdSTryFbYcJMHFA_3CYHvPVE"
 );
 
-const speed = 5;
+// ── YILDIZ ARKA PLAN ──────────────────────────────────────────────
+const bgCanvas = document.getElementById("bg");
+const bgCtx = bgCanvas.getContext("2d");
+let stars = [];
+function initStars(){
+  bgCanvas.width=innerWidth; bgCanvas.height=innerHeight;
+  stars=[];
+  for(let i=0;i<120;i++) stars.push({
+    x:Math.random()*innerWidth, y:Math.random()*innerHeight,
+    r:Math.random()*1.4+0.3, a:Math.random(), da:(Math.random()-0.5)*0.008
+  });
+}
+function drawStars(){
+  bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
+  stars.forEach(s=>{
+    s.a=Math.max(0.05,Math.min(1,s.a+s.da));
+    if(s.a<=0.05||s.a>=1) s.da*=-1;
+    bgCtx.beginPath();
+    bgCtx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    bgCtx.fillStyle=`rgba(255,255,255,${s.a})`;
+    bgCtx.fill();
+  });
+}
+initStars();
+window.addEventListener("resize",initStars);
 
-const player = document.getElementById("player");
-const scoreEl = document.getElementById("score");
-const bestEl = document.getElementById("best");
-const menu = document.getElementById("menu");
+// ── SABITLER ─────────────────────────────────────────────────────
+const PLAYER_SPEED   = 5;
+const LASER_COOLDOWN = 2500;  // daha hızlı lazer
+const LASER_RANGE    = 900;
+const LEVEL_SCORES   = [0,800,2000,3800,6000,9000,13000,18000,24000,32000]; // daha geniş aralık
+const MAX_LEVEL      = 10;
+const INVINC_TIME    = 2800; // daha uzun dokunulmazlık
 
-let gameStarted = false;
-let score = 0;
-let username = "";
+// Enemy başlangıç hızları — belirgin şekilde yavaşlatıldı
+const ENEMY_TYPES = {
+  normal: { size:22, color:"#ff2244", glow:"#ff2244", spd:1.4, hp:1,  pts:10 },
+  fast:   { size:13, color:"#ffdd00", glow:"#ffaa00", spd:2.6, hp:1,  pts:25 },
+  tank:   { size:32, color:"#cc44ff", glow:"#aa00ff", spd:0.8, hp:3,  pts:50 },
+  chaser: { size:18, color:"#ff8800", glow:"#ff6600", spd:1.8, hp:1,  pts:35, chases:true },
+};
 
-let x = 0;
-let y = 0;
+// Hangi seviyede hangi tipler çıkar
+const LEVEL_POOLS = {
+  1:["normal","normal","normal","normal","normal"],
+  2:["normal","normal","normal","normal","fast"],
+  3:["normal","normal","normal","fast","fast"],
+  4:["normal","normal","fast","fast","fast"],
+  5:["normal","normal","fast","fast","tank"],
+  6:["normal","fast","fast","tank","chaser"],
+  7:["fast","fast","tank","tank","chaser"],
+  8:["fast","tank","tank","chaser","chaser"],
+  9:["tank","tank","chaser","chaser","fast"],
+  10:["tank","tank","chaser","chaser","fast","fast"],
+};
 
-const keys = {};
-const enemies = [];
+// ── STATE ─────────────────────────────────────────────────────────
+let gameStarted=false, score=0, level=1, lives=3;
+let x=0, y=0;
+let username="";
+let invincible=false, invincTimer=null;
+let shieldActive=false;
+const keys={};
+const enemies=[];
+const powerups=[];
+let spawnInterval=null;
+let laserReady=true, laserCooldownStart=0, laserCooldownRaf=null;
 
-// 📱 MOBILE JOYSTICK
+// ── MOBİL ALGILAMA ───────────────────────────────────────────────
+const isMobile = /Android|iPhone|iPad|iPod|Touch/i.test(navigator.userAgent) || ('ontouchstart' in window);
 
-let joyActive = false;
-let joyX = 0;
-let joyY = 0;
-let joyCenterX = 0;
-let joyCenterY = 0;
+// ── MOBİL JOYSTICK ───────────────────────────────────────────────
+let joyActive=false, joyX=0, joyY=0, joyCX=0, joyCY=0;
+let joyTouchId=null;
+const joystickZone = document.getElementById("joystickZone");
+const joystickKnob = document.getElementById("joystickKnob");
+const JOY_RADIUS = 39; // joystickBase yarıçapı - knob yarıçapı
 
-document.addEventListener("touchstart",(e)=>{
+joystickZone.addEventListener("touchstart", e=>{
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  joyTouchId = t.identifier;
+  joyActive = true;
+  const rect = joystickZone.getBoundingClientRect();
+  joyCX = rect.left + rect.width/2;
+  joyCY = rect.top  + rect.height/2;
+  updateKnob(t.clientX, t.clientY);
+}, {passive:false});
 
-    let t = e.touches[0];
+joystickZone.addEventListener("touchmove", e=>{
+  e.preventDefault();
+  for(const t of e.changedTouches){
+    if(t.identifier === joyTouchId){
+      joyX = t.clientX; joyY = t.clientY;
+      updateKnob(t.clientX, t.clientY);
+    }
+  }
+}, {passive:false});
 
-    joyActive = true;
-
-    joyCenterX = t.clientX;
-    joyCenterY = t.clientY;
-
-    joyX = t.clientX;
-    joyY = t.clientY;
+joystickZone.addEventListener("touchend", e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier === joyTouchId){
+      joyActive = false; joyTouchId = null;
+      joystickKnob.style.transform = "translate(-50%,-50%)";
+    }
+  }
 });
 
-document.addEventListener("touchmove",(e)=>{
+function updateKnob(cx, cy){
+  let dx = cx - joyCX, dy = cy - joyCY;
+  const d = Math.hypot(dx, dy);
+  if(d > JOY_RADIUS){ dx=dx/d*JOY_RADIUS; dy=dy/d*JOY_RADIUS; }
+  joystickKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+  joyX = joyCX + dx; joyY = joyCY + dy;
+}
 
-    let t = e.touches[0];
+// ── MOBİL ATEŞ BUTONU ────────────────────────────────────────────
+const fireBtn = document.getElementById("fireBtn");
+const fireCooldownRing = document.getElementById("fireCooldownRing");
+let fireBtnRaf = null;
 
-    joyX = t.clientX;
-    joyY = t.clientY;
-});
+fireBtn.addEventListener("touchstart", e=>{
+  e.preventDefault();
+  fireBtn.classList.add("active");
+  fireLaser();
+}, {passive:false});
 
-document.addEventListener("touchend",()=>{
+fireBtn.addEventListener("touchend", e=>{
+  e.preventDefault();
+  fireBtn.classList.remove("active");
+}, {passive:false});
 
-    joyActive = false;
-});
-
-// 👾 ENEMY SPAWN
+// ── SPAWN ─────────────────────────────────────────────────────────
+function getPool(){ return LEVEL_POOLS[Math.min(level,MAX_LEVEL)]||LEVEL_POOLS[MAX_LEVEL]; }
+function getSpawnInterval(){ return Math.max(1200, 4500-(level-1)*300); }
 
 function spawnEnemy(){
+  if(!gameStarted) return;
+  const pool=getPool();
+  const typeName=pool[Math.floor(Math.random()*pool.length)];
+  const def=ENEMY_TYPES[typeName];
 
-    let e = document.createElement("div");
+  const el=document.createElement("div");
+  el.style.cssText=`position:absolute;width:${def.size}px;height:${def.size}px;
+    background:${def.color};border-radius:50%;
+    box-shadow:0 0 8px ${def.glow},0 0 16px ${def.glow}44;z-index:9;`;
 
-    e.className = "enemy";
+  // HP bar for tank
+  if(def.hp>1){
+    const bar=document.createElement("div");
+    bar.style.cssText=`position:absolute;bottom:-7px;left:0;width:100%;height:3px;
+      background:rgba(255,255,255,0.15);border-radius:2px;`;
+    const fill=document.createElement("div");
+    fill.style.cssText=`height:100%;width:100%;background:${def.color};border-radius:2px;`;
+    bar.appendChild(fill); el.appendChild(bar); el._hpFill=fill;
+  }
 
-    let l = document.getElementById("leftPortal").getBoundingClientRect();
-    let r = document.getElementById("rightPortal").getBoundingClientRect();
+  const l=document.getElementById("leftPortal").getBoundingClientRect();
+  const r=document.getElementById("rightPortal").getBoundingClientRect();
+  const side=Math.random()<0.5?"left":"right";
+  if(side==="left"){ el.x=l.left+20; el.y=l.top+l.height/2-def.size/2; }
+  else             { el.x=r.right-20; el.y=r.top+r.height/2-def.size/2; }
 
-    let side = Math.random() < 0.5 ? "left" : "right";
-
-    if(side === "left"){
-
-        e.x = l.left;
-        e.y = l.top + l.height/2 - 11;
-
-    }else{
-
-        e.x = r.left;
-        e.y = r.top + r.height/2 - 11;
-    }
-
-    let a = Math.random() * Math.PI * 2;
-
-    e.vx = Math.cos(a) * 4.5;
-    e.vy = Math.sin(a) * 4.5;
-
-    enemies.push(e);
-
-    document.body.appendChild(e);
+  const spd=def.spd*(1+(level-1)*0.07);
+  const a=Math.random()*Math.PI*2;
+  el.vx=Math.cos(a)*spd; el.vy=Math.sin(a)*spd;
+  el.typeName=typeName; el.hp=def.hp; el.maxHp=def.hp;
+  el.size=def.size; el.pts=def.pts; el.chases=!!def.chases; el.baseSpd=spd;
+  enemies.push(el); document.body.appendChild(el);
 }
 
-setInterval(()=>{
+function resetSpawnInterval(){
+  if(spawnInterval) clearInterval(spawnInterval);
+  spawnInterval=setInterval(spawnEnemy, getSpawnInterval());
+}
 
-    if(gameStarted){
+// ── POWERUP SPAWN ────────────────────────────────────────────────
+function spawnPowerup(){
+  if(!gameStarted||powerups.length>=2) return;
+  const type=Math.random()<0.6?"shield":"life";
+  const el=document.createElement("div");
+  el.className="powerup";
+  const col=type==="shield"?"#ffdd00":"#44aaff";
+  el.style.cssText=`position:absolute;width:22px;height:22px;border-radius:50%;
+    background:${col};box-shadow:0 0 10px ${col};z-index:8;
+    animation:float 2s ease-in-out infinite alternate;`;
+  el.x=80+Math.random()*(innerWidth-160);
+  el.y=80+Math.random()*(innerHeight-160);
+  el.style.left=el.x+"px"; el.style.top=el.y+"px";
+  el.ptype=type; powerups.push(el); document.body.appendChild(el);
+  // 8 saniye sonra kaybol
+  setTimeout(()=>{
+    if(el.parentNode){ el.remove(); powerups.splice(powerups.indexOf(el),1); }
+  },8000);
+}
+setInterval(()=>{ if(gameStarted) spawnPowerup(); },5000);
 
-        spawnEnemy();
-    }
+// ── HIT / CAN ────────────────────────────────────────────────────
+function takeDamage(){
+  if(invincible||shieldActive) return;
+  lives--;
+  updateHearts();
+  if(lives<=0){ gameOver(); return; }
+  invincible=true;
+  const playerEl=document.getElementById("player");
+  playerEl.classList.add("hit");
+  clearTimeout(invincTimer);
+  invincTimer=setTimeout(()=>{ invincible=false; playerEl.classList.remove("hit"); },INVINC_TIME);
+}
 
-},3000);
+function updateHearts(){
+  for(let i=1;i<=3;i++){
+    const h=document.getElementById("h"+i);
+    if(h) h.className="heart"+(i>lives?" dead":"");
+  }
+}
 
-// 🎮 GAME LOOP
+// ── LAZER ────────────────────────────────────────────────────────
+function fireLaser(){
+  if(!gameStarted||!laserReady) return;
+  laserReady=false; laserCooldownStart=performance.now();
 
-function loop(){
+  const px=x+12, py=y+12;
+  let target=null, minDist=Infinity;
+  enemies.forEach(e=>{
+    const ex=e.x+e.size/2, ey=e.y+e.size/2;
+    const d=Math.hypot(ex-px,ey-py);
+    if(d<minDist&&d<LASER_RANGE){ minDist=d; target=e; }
+  });
 
-    if(!gameStarted) return;
+  const laserEl=document.createElement("div");
+  laserEl.style.cssText=`position:absolute;height:3px;background:linear-gradient(to right,cyan,white,cyan);
+    box-shadow:0 0 6px cyan,0 0 16px cyan;transform-origin:left center;
+    pointer-events:none;border-radius:2px;z-index:15;`;
+  let angle, length;
+  if(target){
+    const dx=(target.x+target.size/2)-px, dy=(target.y+target.size/2)-py;
+    angle=Math.atan2(dy,dx)*180/Math.PI; length=Math.hypot(dx,dy);
+  } else { angle=0; length=LASER_RANGE; }
+  laserEl.style.left=px+"px"; laserEl.style.top=(py-1.5)+"px";
+  laserEl.style.width=length+"px";
+  laserEl.style.transform=`rotate(${angle}deg)`;
+  document.body.appendChild(laserEl);
 
-    let vx = 0;
-    let vy = 0;
+  if(target){ hitEnemy(target,1); hitFX(target.x+target.size/2,target.y+target.size/2,ENEMY_TYPES[target.typeName].color); }
+  setTimeout(()=>laserEl.remove(),200);
+  updateLaserBar();
+}
 
-    // 📱 MOBILE
-    if(joyActive){
+function hitEnemy(e,dmg){
+  e.hp-=dmg;
+  if(e._hpFill) e._hpFill.style.width=Math.max(0,(e.hp/e.maxHp)*100)+"%";
+  if(e.hp<=0){ score+=e.pts; e.remove(); enemies.splice(enemies.indexOf(e),1); }
+}
 
-        let dx = joyX - joyCenterX;
-        let dy = joyY - joyCenterY;
-
-        let d = Math.sqrt(dx*dx + dy*dy);
-
-        let max = 60;
-
-        if(d > max){
-
-            dx = dx/d * max;
-            dy = dy/d * max;
-        }
-
-        vx = dx/max * speed;
-        vy = dy/max * speed;
-    }
-
-    // 💻 PC
+function updateLaserBar(){
+  cancelAnimationFrame(laserCooldownRaf);
+  const lbl=document.getElementById("laserLabel");
+  const fill=document.getElementById("laserFill");
+  lbl.textContent="BEKLEME"; fill.style.background="rgba(0,255,255,0.25)"; fill.style.boxShadow="none";
+  fireCooldownRing.style.background="conic-gradient(rgba(0,255,255,0.4) 0%, transparent 0%)";
+  function tick(){
+    const pct=Math.min((performance.now()-laserCooldownStart)/LASER_COOLDOWN,1);
+    fill.style.width=(pct*100)+"%";
+    fireCooldownRing.style.background=`conic-gradient(rgba(0,255,255,0.5) ${pct*360}deg, transparent ${pct*360}deg)`;
+    if(pct<1){ laserCooldownRaf=requestAnimationFrame(tick); }
     else{
-
-        if(keys.left) vx = -speed;
-        if(keys.right) vx = speed;
-        if(keys.up) vy = -speed;
-        if(keys.down) vy = speed;
+      laserReady=true;
+      lbl.textContent="LAZER ✓";
+      fill.style.background="cyan"; fill.style.boxShadow="0 0 4px cyan";
+      fireCooldownRing.style.background="conic-gradient(cyan 360deg, transparent 360deg)";
     }
-
-    x += vx;
-    y += vy;
-
-    // WALL LIMIT
-    if(x < 0) x = 0;
-    if(y < 0) y = 0;
-
-    if(x > innerWidth - 22) x = innerWidth - 22;
-    if(y > innerHeight - 22) y = innerHeight - 22;
-
-    player.style.left = x + "px";
-    player.style.top = y + "px";
-
-    // 🟥 HAZARD
-    let hx = innerWidth/2 - 60;
-    let hy = innerHeight/2 - 60;
-    let hw = 120;
-    let hh = 120;
-
-    enemies.forEach(e=>{
-
-        e.x += e.vx;
-        e.y += e.vy;
-
-        // SCREEN BOUNCE
-        if(e.x < 0 || e.x > innerWidth){
-
-            e.vx *= -1;
-        }
-
-        if(e.y < 0 || e.y > innerHeight){
-
-            e.vy *= -1;
-        }
-
-        // 🟥 ENEMY HAZARD BOUNCE
-        if(
-            e.x < hx + hw &&
-            e.x + 22 > hx &&
-            e.y < hy + hh &&
-            e.y + 22 > hy
-        ){
-
-            if(e.x < hx + hw/2){
-
-                e.vx = -Math.abs(e.vx);
-
-            }else{
-
-                e.vx = Math.abs(e.vx);
-            }
-
-            if(e.y < hy + hh/2){
-
-                e.vy = -Math.abs(e.vy);
-
-            }else{
-
-                e.vy = Math.abs(e.vy);
-            }
-
-            if(e.x < hx) e.x = hx - 23;
-            if(e.x > hx) e.x = hx + hw + 1;
-
-            if(e.y < hy) e.y = hy - 23;
-            if(e.y > hy) e.y = hy + hh + 1;
-        }
-
-        e.style.left = e.x + "px";
-        e.style.top = e.y + "px";
-
-        // 💀 PLAYER ENEMY COLLISION
-        if(
-            x < e.x + 22 &&
-            x + 22 > e.x &&
-            y < e.y + 22 &&
-            y + 22 > e.y
-        ){
-
-            gameOver();
-        }
-    });
-
-    // 💀 PLAYER HAZARD COLLISION
-    if(
-        x < hx + hw &&
-        x + 22 > hx &&
-        y < hy + hh &&
-        y + 22 > hy
-    ){
-
-        gameOver();
-    }
-
-    score++;
-
-    scoreEl.innerText = "Skor: " + score;
-
-    requestAnimationFrame(loop);
+  }
+  laserCooldownRaf=requestAnimationFrame(tick);
 }
 
-// 🚀 START GAME
+function hitFX(hx,hy,col){
+  for(let i=0;i<8;i++){
+    const p=document.createElement("div");
+    p.style.cssText=`position:absolute;width:5px;height:5px;background:${col};border-radius:50%;
+      left:${hx}px;top:${hy}px;pointer-events:none;box-shadow:0 0 4px ${col};z-index:20;`;
+    const a=(i/8)*Math.PI*2, d=22+Math.random()*18;
+    p.animate([
+      {transform:"translate(-50%,-50%)",opacity:1},
+      {transform:`translate(calc(-50% + ${Math.cos(a)*d}px),calc(-50% + ${Math.sin(a)*d}px))`,opacity:0}
+    ],{duration:380,easing:"ease-out",fill:"forwards"});
+    document.body.appendChild(p); setTimeout(()=>p.remove(),400);
+  }
+}
 
+// ── LEVEL CHECK ───────────────────────────────────────────────────
+function checkLevel(){
+  if(level>=MAX_LEVEL) return;
+  if(score>=LEVEL_SCORES[level]){
+    level++;
+    showLevelBanner();
+    resetSpawnInterval();
+    document.getElementById("hudLevel").textContent="SEVİYE "+level;
+  }
+}
+
+function showLevelBanner(){
+  const b=document.getElementById("levelBanner");
+  b.innerHTML=level<MAX_LEVEL
+    ? `SEVİYE<span class="lvl-num">${level}</span>`
+    : `<span class="lvl-num" style="color:#ffdd00">MAX SEVİYE!</span>`;
+  b.style.display="block"; b.style.opacity="1";
+  b.animate([{opacity:0,transform:"translate(-50%,-50%) scale(0.7)"},{opacity:1,transform:"translate(-50%,-50%) scale(1)"}],{duration:300,fill:"forwards"});
+  setTimeout(()=>{
+    b.animate([{opacity:1},{opacity:0}],{duration:600,fill:"forwards"});
+    setTimeout(()=>b.style.display="none",620);
+  },1600);
+}
+
+// ── KEYBOARD ─────────────────────────────────────────────────────
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowLeft"||e.key==="a") keys.left=true;
+  if(e.key==="ArrowRight"||e.key==="d") keys.right=true;
+  if(e.key==="ArrowUp"||e.key==="w") keys.up=true;
+  if(e.key==="ArrowDown"||e.key==="s") keys.down=true;
+  if(e.key===" "){ e.preventDefault(); fireLaser(); }
+});
+document.addEventListener("keyup",e=>{
+  if(e.key==="ArrowLeft"||e.key==="a") keys.left=false;
+  if(e.key==="ArrowRight"||e.key==="d") keys.right=false;
+  if(e.key==="ArrowUp"||e.key==="w") keys.up=false;
+  if(e.key==="ArrowDown"||e.key==="s") keys.down=false;
+});
+
+// ── GAME LOOP ─────────────────────────────────────────────────────
+function loop(){
+  if(!gameStarted) return;
+  drawStars();
+
+  let vx=0, vy=0;
+  if(joyActive){
+    let dx=joyX-joyCX, dy=joyY-joyCY;
+    const d=Math.hypot(dx,dy),max=60;
+    if(d>max){dx=dx/d*max;dy=dy/d*max;}
+    vx=dx/max*PLAYER_SPEED; vy=dy/max*PLAYER_SPEED;
+  } else {
+    if(keys.left)  vx=-PLAYER_SPEED;
+    if(keys.right) vx= PLAYER_SPEED;
+    if(keys.up)    vy=-PLAYER_SPEED;
+    if(keys.down)  vy= PLAYER_SPEED;
+  }
+  x=Math.max(0,Math.min(x+vx,innerWidth-24));
+  y=Math.max(0,Math.min(y+vy,innerHeight-24));
+
+  const playerEl=document.getElementById("player");
+  playerEl.style.left=x+"px"; playerEl.style.top=y+"px";
+
+  const hx=innerWidth/2-50, hy=innerHeight/2-50, hw=100, hh=100;
+
+  // DÜŞMANLAR
+  for(let i=enemies.length-1;i>=0;i--){
+    const e=enemies[i];
+    if(e.chases){
+      const dx=(x+12)-(e.x+e.size/2), dy=(y+12)-(e.y+e.size/2);
+      const d=Math.hypot(dx,dy)||1;
+      e.vx+=(dx/d)*0.12; e.vy+=(dy/d)*0.12;
+      const s=Math.hypot(e.vx,e.vy);
+      if(s>e.baseSpd){e.vx=e.vx/s*e.baseSpd;e.vy=e.vy/s*e.baseSpd;}
+    }
+    e.x+=e.vx; e.y+=e.vy;
+    if(e.x<0||e.x>innerWidth-e.size) e.vx*=-1;
+    if(e.y<0||e.y>innerHeight-e.size) e.vy*=-1;
+    // hazard bounce
+    if(e.x<hx+hw&&e.x+e.size>hx&&e.y<hy+hh&&e.y+e.size>hy){
+      if(e.x+e.size/2<hx+hw/2) e.vx=-Math.abs(e.vx); else e.vx=Math.abs(e.vx);
+      if(e.y+e.size/2<hy+hh/2) e.vy=-Math.abs(e.vy); else e.vy=Math.abs(e.vy);
+    }
+    e.style.left=e.x+"px"; e.style.top=e.y+"px";
+    // çarpışma
+    if(x<e.x+e.size&&x+24>e.x&&y<e.y+e.size&&y+24>e.y) takeDamage();
+  }
+
+  // HAZARD çarpışma
+  if(x<hx+hw&&x+24>hx&&y<hy+hh&&y+24>hy) takeDamage();
+
+  // POWERUP topla
+  for(let i=powerups.length-1;i>=0;i--){
+    const p=powerups[i];
+    if(x<p.x+22&&x+24>p.x&&y<p.y+22&&y+24>p.y){
+      if(p.ptype==="shield"){
+        shieldActive=true; playerEl.classList.add("shield");
+        setTimeout(()=>{ shieldActive=false; playerEl.classList.remove("shield"); },3000);
+      } else if(p.ptype==="life"&&lives<3){
+        lives=Math.min(3,lives+1); updateHearts();
+      }
+      p.remove(); powerups.splice(i,1);
+    }
+  }
+
+  score++;
+  checkLevel();
+  document.getElementById("hudScore").textContent="Skor: "+score;
+
+  requestAnimationFrame(loop);
+}
+
+// ── START ─────────────────────────────────────────────────────────
 function startGame(){
+  username=document.getElementById("usernameInput").value.trim()||"Anon";
+  _startGame();
+}
+function restartGame(){
+  username=document.getElementById("usernameInput2").value.trim()||username||"Anon";
+  _startGame();
+}
+function _startGame(){
+  document.getElementById("menu").style.display="none";
+  document.getElementById("gameOverScreen").style.display="none";
+  document.getElementById("hud").style.display="flex";
+  document.getElementById("player").style.display="block";
+  document.getElementById("laserUI").style.display="flex";
+  if(isMobile) document.getElementById("mobileControls").style.display="block";
 
-    username = document.getElementById("username").value || "Anon";
+  const fill=document.getElementById("laserFill");
+  fill.style.width="100%"; fill.style.background="cyan"; fill.style.boxShadow="0 0 4px cyan";
+  document.getElementById("laserLabel").textContent="LAZER ✓";
 
-    menu.style.display = "none";
+  enemies.forEach(e=>e.remove()); enemies.length=0;
+  powerups.forEach(p=>p.remove()); powerups.length=0;
+  document.querySelectorAll(".laser").forEach(l=>l.remove());
 
-    player.style.display = "block";
-    scoreEl.style.display = "block";
+  gameStarted=true; score=0; level=1; lives=3;
+  laserReady=true; invincible=false; shieldActive=false;
+  cancelAnimationFrame(laserCooldownRaf);
 
-    gameStarted = true;
+  x=innerWidth/2; y=innerHeight/2-140;
+  updateHearts();
+  document.getElementById("hudLevel").textContent="SEVİYE 1";
+  resetSpawnInterval();
+  loadBoard();
+  loop();
+}
+window.startGame=startGame;
+window.restartGame=restartGame;
 
-    score = 0;
-
-    let hy = innerHeight/2;
-
-    // 🟢 SAFE SPAWN
-    x = innerWidth/2;
-    y = hy - 120;
-
-    loadBest();
-
-    loop();
+// ── LEADERBOARD ───────────────────────────────────────────────────
+async function loadBoard(){
+  const {data}=await supabase.from("leaderboard").select("name,score").order("score",{ascending:false}).limit(5);
+  const render=id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    if(!data||data.length===0){ el.innerHTML='<div style="color:rgba(255,255,255,0.2);font-size:12px;text-align:center;">Henüz kayıt yok</div>'; return; }
+    const medals=["🥇","🥈","🥉","4.","5."];
+    el.innerHTML=data.map((r,i)=>`
+      <div class="board-row">
+        <span class="board-rank">${medals[i]}</span>
+        <span class="board-name">${r.name}</span>
+        <span class="board-score">${r.score}</span>
+      </div>`).join("");
+  };
+  render("boardRows"); render("boardRows2");
 }
 
-window.startGame = startGame;
-
-// ⌨️ KEYBOARD
-
-document.addEventListener("keydown",(e)=>{
-
-    if(e.key==="ArrowLeft") keys.left = true;
-    if(e.key==="ArrowRight") keys.right = true;
-    if(e.key==="ArrowUp") keys.up = true;
-    if(e.key==="ArrowDown") keys.down = true;
-});
-
-document.addEventListener("keyup",(e)=>{
-
-    if(e.key==="ArrowLeft") keys.left = false;
-    if(e.key==="ArrowRight") keys.right = false;
-    if(e.key==="ArrowUp") keys.up = false;
-    if(e.key==="ArrowDown") keys.down = false;
-});
-
-// 🏆 TOP 3 LEADERBOARD
-
-async function loadBest(){
-
-    const { data } = await supabase
-        .from("leaderboard")
-        .select("name, score")
-        .order("score",{ascending:false})
-        .limit(3);
-
-    if(!data || data.length===0){
-
-        bestEl.innerHTML = "En Yüksek: 0";
-
-        return;
-    }
-
-    let text = "🏆 EN İYİ 3<br><br>";
-
-    data.forEach((player,index)=>{
-
-        text += `
-            ${index+1}. ${player.name} - ${player.score}<br>
-        `;
-    });
-
-    bestEl.innerHTML = text;
-}
-
-// 💀 GAME OVER
-
+// ── GAME OVER ─────────────────────────────────────────────────────
 function gameOver(){
+  gameStarted=false;
+  clearInterval(spawnInterval);
+  cancelAnimationFrame(laserCooldownRaf);
+  enemies.forEach(e=>e.remove()); enemies.length=0;
+  powerups.forEach(p=>p.remove()); powerups.length=0;
+  document.querySelectorAll(".laser").forEach(l=>l.remove());
 
-    gameStarted = false;
+  supabase.from("leaderboard").insert([{name:username,score}]).then(()=>loadBoard());
 
-    // 👾 DÜŞMANLARI TEMİZLE
-    enemies.forEach(e=>e.remove());
-    enemies.length = 0;
+  document.getElementById("player").style.display="none";
+  document.getElementById("hud").style.display="none";
+  document.getElementById("laserUI").style.display="none";
+  document.getElementById("mobileControls").style.display="none";
 
-    supabase.from("leaderboard").insert([
-        {
-            name:username,
-            score:score
-        }
-    ]).then(()=>loadBest());
-
-    player.style.display = "none";
-    scoreEl.style.display = "none";
-
-    menu.style.display = "flex";
-
-    menu.innerHTML = `
-        <h1>OYUN BİTTİ</h1>
-
-        <h2>Skor: ${score}</h2>
-
-        <input
-            id="username"
-            placeholder="Kullanıcı adı"
-            value="${username}"
-        >
-
-        <button onclick="startGame()">
-            TEKRAR OYNA
-        </button>
-    `;
+  document.getElementById("goScore").textContent=score;
+  document.getElementById("goLevel").textContent=level;
+  document.getElementById("usernameInput2").value=username;
+  document.getElementById("gameOverScreen").style.display="flex";
 }
 
-loadBest();
+loadBoard();
 
+// ilk yıldız çizimi
+drawStars();
 </script>
-
 </body>
 </html>
