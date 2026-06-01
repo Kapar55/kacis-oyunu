@@ -3,133 +3,227 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kaçış Oyunu</title>
+<title>KAÇIŞ</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap');
+
 *{margin:0;padding:0;box-sizing:border-box;}
-body{overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;background:#050510;}
+body{overflow:hidden;font-family:'Rajdhani',sans-serif;background:#050510;}
 canvas#bg{position:fixed;top:0;left:0;z-index:0;pointer-events:none;}
-/* KÖR MOD OVERLAY */
-#blindOverlay{position:fixed;inset:0;z-index:6;pointer-events:none;display:none;}
-#player{width:24px;height:24px;background:cyan;position:absolute;border-radius:50%;box-shadow:0 0 12px cyan,0 0 24px rgba(0,255,255,0.4);display:none;z-index:10;transition:box-shadow 0.1s;}
+
+/* ── OYUNCU & PORTAL ───────────────────── */
+#player{width:24px;height:24px;background:cyan;position:absolute;border-radius:50%;
+  box-shadow:0 0 12px cyan,0 0 24px rgba(0,255,255,0.4);display:none;z-index:10;transition:box-shadow 0.1s;}
 #player.shield{background:white;box-shadow:0 0 18px white,0 0 40px rgba(255,255,255,0.6);}
-.portal{position:absolute;width:56px;height:56px;top:50%;transform:translateY(-50%);border-radius:50%;background:radial-gradient(circle,#000 30%,transparent 70%);box-shadow:0 0 18px #ff2244;z-index:5;}
+.portal{position:absolute;width:56px;height:56px;top:50%;transform:translateY(-50%);border-radius:50%;
+  background:radial-gradient(circle,#000 30%,transparent 70%);box-shadow:0 0 18px #ff2244;z-index:5;}
 #leftPortal{left:8px;}
 #rightPortal{right:8px;}
-#hazard{position:absolute;width:100px;height:100px;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:16px;background:rgba(180,0,0,0.5);box-shadow:0 0 30px #ff0022,0 0 60px rgba(255,0,34,0.2);z-index:5;}
-#hud{position:absolute;top:0;left:0;right:0;padding:12px 16px;display:none;z-index:20;pointer-events:none;flex-direction:row;align-items:center;gap:16px;}
-#hudScore{color:white;font-size:15px;font-weight:600;text-shadow:0 0 8px rgba(255,255,255,0.4);}
-#hudLevel{background:rgba(0,255,255,0.1);border:1px solid rgba(0,255,255,0.3);color:cyan;font-size:12px;font-weight:700;letter-spacing:2px;padding:3px 10px;border-radius:20px;}
-#hudMode{font-size:11px;font-weight:700;letter-spacing:2px;padding:3px 10px;border-radius:20px;}
+#hazard{position:absolute;width:100px;height:100px;left:50%;top:50%;transform:translate(-50%,-50%);
+  border-radius:16px;background:rgba(180,0,0,0.5);box-shadow:0 0 30px #ff0022,0 0 60px rgba(255,0,34,0.2);z-index:5;}
+
+/* ── HUD ───────────────────────────────── */
+#hud{position:absolute;top:0;left:0;right:0;padding:12px 20px;display:none;z-index:20;
+  pointer-events:none;flex-direction:row;align-items:center;gap:14px;}
+#hudScore{color:white;font-family:'Orbitron',monospace;font-size:14px;font-weight:700;
+  text-shadow:0 0 8px rgba(0,255,255,0.5);letter-spacing:1px;}
+#hudLevel{background:rgba(0,255,255,0.08);border:1px solid rgba(0,255,255,0.25);color:cyan;
+  font-size:11px;font-weight:700;letter-spacing:3px;padding:3px 10px;border-radius:20px;
+  font-family:'Orbitron',monospace;}
 #hudLives{margin-left:auto;display:flex;gap:6px;}
 .heart{font-size:18px;transition:opacity 0.3s;}
 .heart.dead{opacity:0.2;filter:grayscale(1);}
-#laserUI{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:5px;z-index:20;}
-#laserLabel{color:cyan;font-size:10px;font-weight:700;letter-spacing:3px;text-shadow:0 0 6px cyan;}
+
+/* ── LAZER BAR ─────────────────────────── */
+#laserUI{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
+  display:none;flex-direction:column;align-items:center;gap:5px;z-index:20;}
+#laserLabel{color:cyan;font-size:10px;font-weight:700;letter-spacing:3px;text-shadow:0 0 6px cyan;font-family:'Orbitron',monospace;}
 #laserTrack{width:140px;height:6px;background:rgba(0,255,255,0.1);border:1px solid rgba(0,255,255,0.25);border-radius:3px;overflow:hidden;}
 #laserFill{height:100%;width:100%;background:cyan;box-shadow:0 0 4px cyan;border-radius:3px;}
 #laserKey{color:rgba(0,255,255,0.35);font-size:9px;letter-spacing:2px;}
-.score-popup{position:absolute;pointer-events:none;z-index:50;color:#44ffaa;font-size:16px;font-weight:800;text-shadow:0 0 8px #44ffaa;animation:popUp 0.9s ease-out forwards;}
+
+/* ── SCORE POPUP ───────────────────────── */
+.score-popup{position:absolute;pointer-events:none;z-index:50;color:#44ffaa;
+  font-size:16px;font-weight:800;text-shadow:0 0 8px #44ffaa;font-family:'Orbitron',monospace;
+  animation:popUp 0.9s ease-out forwards;}
 @keyframes popUp{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-50px) scale(0.8);}}
+
+/* ── POWERUP ───────────────────────────── */
+.powerup{position:absolute;width:20px;height:20px;border-radius:50%;z-index:8;
+  pointer-events:none;animation:float 2s ease-in-out infinite alternate;}
+@keyframes float{from{transform:translateY(0)}to{transform:translateY(-6px)}}
+
+/* ── MOBİL KONTROLLER ──────────────────── */
 #mobileControls{position:fixed;bottom:0;left:0;right:0;height:200px;display:none;pointer-events:none;z-index:30;}
 #joystickZone{position:absolute;bottom:20px;left:24px;width:130px;height:130px;pointer-events:all;}
 #joystickBase{position:absolute;inset:0;border-radius:50%;background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.12);}
-#joystickKnob{position:absolute;width:52px;height:52px;border-radius:50%;background:rgba(0,255,255,0.25);border:2px solid rgba(0,255,255,0.5);top:50%;left:50%;transform:translate(-50%,-50%);transition:transform 0.05s;box-shadow:0 0 12px rgba(0,255,255,0.3);}
-#fireBtn{position:absolute;bottom:28px;right:28px;width:78px;height:78px;border-radius:50%;background:rgba(0,255,255,0.15);border:2px solid rgba(0,255,255,0.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;pointer-events:all;box-shadow:0 0 16px rgba(0,255,255,0.2);-webkit-tap-highlight-color:transparent;user-select:none;}
+#joystickKnob{position:absolute;width:52px;height:52px;border-radius:50%;background:rgba(0,255,255,0.25);
+  border:2px solid rgba(0,255,255,0.5);top:50%;left:50%;transform:translate(-50%,-50%);
+  box-shadow:0 0 12px rgba(0,255,255,0.3);}
+#fireBtn{position:absolute;bottom:28px;right:28px;width:78px;height:78px;border-radius:50%;
+  background:rgba(0,255,255,0.15);border:2px solid rgba(0,255,255,0.45);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  pointer-events:all;box-shadow:0 0 16px rgba(0,255,255,0.2);
+  -webkit-tap-highlight-color:transparent;user-select:none;}
 #fireBtn.active{background:rgba(0,255,255,0.35);border-color:cyan;}
 #fireBtnLabel{color:cyan;font-size:11px;font-weight:700;letter-spacing:2px;}
 #fireBtnIcon{color:cyan;font-size:22px;line-height:1;}
-#fireCooldownRing{position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(cyan 0%, transparent 0%);opacity:0.4;pointer-events:none;}
-.powerup{position:absolute;width:20px;height:20px;border-radius:50%;z-index:8;pointer-events:none;animation:float 2s ease-in-out infinite alternate;}
-@keyframes float{from{transform:translateY(0)}to{transform:translateY(-6px)}}
-#musicToggle{position:fixed;top:12px;right:16px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);font-size:11px;letter-spacing:1px;padding:6px 12px;border-radius:20px;cursor:pointer;z-index:200;transition:all 0.2s;}
-#musicToggle:hover{background:rgba(0,255,255,0.1);border-color:rgba(0,255,255,0.3);color:cyan;}
+#fireCooldownRing{position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(cyan 0%,transparent 0%);opacity:0.4;pointer-events:none;}
 
-/* ── MENÜ ─────────────────────────────────────────────────────── */
-#menu{position:absolute;inset:0;background:#050510;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;z-index:100;overflow-y:auto;padding:24px 16px 36px;}
-.menu-title{font-size:42px;font-weight:800;letter-spacing:6px;background:linear-gradient(135deg,cyan,#0066ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;margin-top:4px;}
-.menu-sub{color:rgba(255,255,255,0.3);font-size:12px;letter-spacing:3px;margin-bottom:20px;}
+/* ── MÜZİK BUTONU ──────────────────────── */
+#musicToggle{position:fixed;top:12px;right:16px;background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);font-size:11px;
+  letter-spacing:1px;padding:6px 12px;border-radius:20px;cursor:pointer;z-index:200;
+  transition:all 0.2s;font-family:'Rajdhani',sans-serif;}
+#musicToggle:hover{background:rgba(0,255,255,0.08);border-color:rgba(0,255,255,0.3);color:cyan;}
 
-/* MOD SEÇİCİ */
-.mode-selector{display:flex;gap:10px;margin-bottom:20px;max-width:440px;width:100%;}
-.mode-btn{flex:1;padding:12px 6px;border-radius:12px;border:2px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.2s;text-align:center;position:relative;overflow:hidden;}
-.mode-btn:hover{transform:translateY(-2px);}
-.mode-btn.active-normal{border-color:rgba(0,255,255,0.6);background:rgba(0,255,255,0.08);box-shadow:0 0 16px rgba(0,255,255,0.15);}
-.mode-btn.active-blind{border-color:rgba(180,0,255,0.6);background:rgba(120,0,200,0.1);box-shadow:0 0 16px rgba(180,0,255,0.15);}
-.mode-btn.active-mirror{border-color:rgba(255,140,0,0.6);background:rgba(200,80,0,0.1);box-shadow:0 0 16px rgba(255,140,0,0.15);}
-.mode-icon{font-size:22px;display:block;margin-bottom:4px;}
-.mode-name{font-size:11px;font-weight:700;letter-spacing:2px;display:block;}
-.mode-name-normal{color:cyan;}
-.mode-name-blind{color:#cc44ff;}
-.mode-name-mirror{color:#ff8800;}
-.mode-desc{font-size:10px;color:rgba(255,255,255,0.35);margin-top:3px;line-height:1.4;}
-
-.info-box{background:rgba(0,255,255,0.04);border:1px solid rgba(0,255,255,0.12);border-radius:14px;padding:14px 16px;max-width:440px;margin-bottom:16px;width:100%;}
-.info-box.blind-box{background:rgba(120,0,200,0.06);border-color:rgba(180,0,255,0.15);}
-.info-box.mirror-box{background:rgba(200,80,0,0.06);border-color:rgba(255,140,0,0.15);}
-.info-box-title{color:cyan;font-size:10px;font-weight:700;letter-spacing:3px;margin-bottom:10px;text-align:center;text-shadow:0 0 6px cyan;}
-.info-box-title.blind-title{color:#cc44ff;text-shadow:0 0 6px #cc44ff;}
-.info-box-title.mirror-title{color:#ff8800;text-shadow:0 0 6px #ff8800;}
-.info-desc{color:rgba(255,255,255,0.5);font-size:11.5px;line-height:1.8;text-align:center;margin-bottom:12px;}
-.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
-.info-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;}
-.info-icon{font-size:15px;flex-shrink:0;}
-.info-text{font-size:10.5px;color:rgba(255,255,255,0.5);line-height:1.4;}
-.info-text b{color:rgba(255,255,255,0.85);font-weight:600;}
-.enemy-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;}
-.enemy-item{background:rgba(255,255,255,0.02);border-radius:8px;padding:7px 10px;display:flex;align-items:center;gap:8px;}
-.enemy-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
-.enemy-text{font-size:10px;color:rgba(255,255,255,0.45);line-height:1.4;}
-
-/* KULLANICI ADI + BAŞLA */
-#usernameInput{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:white;padding:12px 20px;border-radius:12px;font-size:15px;outline:none;width:220px;text-align:center;margin-bottom:14px;}
-#usernameInput::placeholder{color:rgba(255,255,255,0.25);}
-#startBtn{border:none;padding:13px 40px;border-radius:12px;font-size:16px;font-weight:800;letter-spacing:2px;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;}
-#startBtn:hover{transform:scale(1.04);}
-#startBtn:active{transform:scale(0.97);}
-#startBtn.btn-normal{background:linear-gradient(135deg,cyan,#0088ff);color:#000;}
-#startBtn.btn-blind{background:linear-gradient(135deg,#cc44ff,#5500aa);color:#fff;}
-#startBtn.btn-mirror{background:linear-gradient(135deg,#ff8800,#cc3300);color:#fff;}
-
-/* LİDERLİK TABLOLARI — sekmeli */
-.boards-wrap{margin-top:18px;max-width:440px;width:100%;}
-.board-tabs{display:flex;gap:0;margin-bottom:0;border-radius:10px 10px 0 0;overflow:hidden;border:1px solid rgba(255,255,255,0.07);border-bottom:none;}
-.board-tab{flex:1;padding:9px 4px;text-align:center;font-size:10px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:background 0.2s,color 0.2s;background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.07);}
-.board-tab:last-child{border-right:none;}
-.board-tab.tab-active-normal{background:rgba(0,255,255,0.1);color:cyan;}
-.board-tab.tab-active-blind{background:rgba(180,0,255,0.12);color:#cc44ff;}
-.board-tab.tab-active-mirror{background:rgba(255,140,0,0.1);color:#ff8800;}
-.board-panel{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:0 0 12px 12px;padding:14px 20px;}
-.board-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
-.board-row:last-child{border-bottom:none;}
-.board-rank{color:rgba(255,255,255,0.25);font-size:12px;width:20px;}
-.board-name{color:rgba(255,255,255,0.7);font-size:13px;flex:1;padding:0 8px;}
-.board-score{font-size:13px;font-weight:700;}
-.board-score-normal{color:cyan;}
-.board-score-blind{color:#cc44ff;}
-.board-score-mirror{color:#ff8800;}
-
-#levelBanner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:white;font-size:28px;font-weight:800;letter-spacing:4px;pointer-events:none;display:none;z-index:50;text-align:center;}
+/* ── LEVEL BANNER ──────────────────────── */
+#levelBanner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  color:white;font-size:28px;font-weight:800;letter-spacing:4px;pointer-events:none;
+  display:none;z-index:50;text-align:center;font-family:'Orbitron',monospace;}
 #levelBanner .lvl-num{color:cyan;font-size:44px;display:block;text-shadow:0 0 20px cyan;}
-
-/* GAME OVER */
-#gameOverScreen{position:absolute;inset:0;background:rgba(5,5,16,0.94);display:none;flex-direction:column;justify-content:flex-start;align-items:center;z-index:100;overflow-y:auto;padding:40px 16px 36px;}
-.go-title{font-size:38px;font-weight:800;color:white;letter-spacing:4px;margin-bottom:4px;}
-.go-mode-badge{font-size:11px;font-weight:700;letter-spacing:3px;padding:4px 14px;border-radius:20px;margin-bottom:6px;}
-.go-score{font-size:18px;color:rgba(255,255,255,0.5);margin-bottom:24px;}
-.go-score span{font-weight:700;}
 
 @keyframes invincFlash{0%,100%{opacity:1}50%{opacity:0.3}}
 #player.hit{animation:invincFlash 0.15s linear 6;}
 
-/* AYNA MODU — ekran yatay çevrilmiş hissi için hafif vignette kırmızı */
-body.mirror-active::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:4;
-  box-shadow:inset 0 0 80px rgba(255,100,0,0.18);border:2px solid rgba(255,100,0,0.12);}
+/* ════════════════════════════════════════
+   MENÜ
+   ════════════════════════════════════════ */
+#menu{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:100;overflow-y:auto;padding:32px 20px 40px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(0,255,255,0.04) 0%,transparent 60%),#050510;
+}
+
+/* Dekoratif ızgara çizgisi arka plan */
+#menu::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(0,255,255,0.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,255,0.025) 1px,transparent 1px);
+  background-size:60px 60px;
+  pointer-events:none;z-index:0;
+}
+
+.menu-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%;max-width:460px;}
+
+/* Başlık */
+.menu-logo{
+  font-family:'Orbitron',monospace;font-size:52px;font-weight:900;letter-spacing:8px;
+  background:linear-gradient(135deg,#00ffff 0%,#0088ff 50%,#00ffff 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  text-shadow:none;filter:drop-shadow(0 0 20px rgba(0,255,255,0.35));
+  margin-bottom:4px;line-height:1;
+}
+.menu-tagline{
+  color:rgba(0,255,255,0.35);font-size:11px;letter-spacing:6px;font-weight:600;
+  margin-bottom:36px;text-transform:uppercase;
+}
+
+/* Bilgi kartları */
+.info-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:28px;}
+.info-card{
+  background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px;
+  transition:border-color 0.2s;
+}
+.info-card:hover{border-color:rgba(0,255,255,0.15);}
+.ic-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
+.ic-text{font-size:12px;color:rgba(255,255,255,0.45);line-height:1.6;}
+.ic-text b{color:rgba(255,255,255,0.85);font-weight:600;display:block;margin-bottom:1px;font-size:13px;}
+
+/* Düşman türleri */
+.enemy-row{
+  display:flex;align-items:center;gap:10px;width:100%;
+  background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);
+  border-radius:10px;padding:10px 14px;margin-bottom:8px;
+}
+.e-dot{width:13px;height:13px;border-radius:50%;flex-shrink:0;}
+.e-info{font-size:12px;color:rgba(255,255,255,0.4);flex:1;}
+.e-info b{font-weight:700;}
+.e-badge{font-size:10px;letter-spacing:1px;padding:2px 8px;border-radius:10px;font-weight:700;}
+
+/* Giriş & buton */
+.form-section{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;margin-top:8px;}
+#usernameInput{
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  color:white;padding:13px 22px;border-radius:12px;font-size:15px;outline:none;
+  width:240px;text-align:center;font-family:'Rajdhani',sans-serif;font-weight:600;
+  letter-spacing:1px;transition:border-color 0.2s,box-shadow 0.2s;
+}
+#usernameInput::placeholder{color:rgba(255,255,255,0.2);}
+#usernameInput:focus{border-color:rgba(0,255,255,0.35);box-shadow:0 0 0 3px rgba(0,255,255,0.06);}
+#startBtn{
+  background:linear-gradient(135deg,#00e5ff,#0066ff);color:#000;border:none;
+  padding:14px 50px;border-radius:12px;font-size:15px;font-weight:800;
+  letter-spacing:3px;cursor:pointer;font-family:'Orbitron',monospace;
+  box-shadow:0 0 24px rgba(0,200,255,0.3),0 4px 16px rgba(0,0,0,0.4);
+  transition:transform 0.15s,box-shadow 0.15s;
+}
+#startBtn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 0 32px rgba(0,200,255,0.45),0 8px 24px rgba(0,0,0,0.5);}
+#startBtn:active{transform:scale(0.97);}
+
+/* Liderlik tablosu */
+.board-wrap{width:100%;margin-top:28px;}
+.board-header{
+  display:flex;align-items:center;gap:10px;margin-bottom:12px;
+}
+.board-title{
+  font-family:'Orbitron',monospace;font-size:10px;font-weight:700;
+  letter-spacing:4px;color:rgba(0,255,255,0.5);
+}
+.board-line{flex:1;height:1px;background:linear-gradient(to right,rgba(0,255,255,0.15),transparent);}
+.board-rows{background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);border-radius:12px;overflow:hidden;}
+.board-row{
+  display:flex;align-items:center;padding:11px 18px;
+  border-bottom:1px solid rgba(255,255,255,0.04);gap:12px;transition:background 0.15s;
+}
+.board-row:last-child{border-bottom:none;}
+.board-row:hover{background:rgba(255,255,255,0.02);}
+.b-rank{font-family:'Orbitron',monospace;font-size:13px;width:24px;color:rgba(255,255,255,0.2);}
+.b-name{font-size:14px;color:rgba(255,255,255,0.7);flex:1;font-weight:600;letter-spacing:0.5px;}
+.b-score{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:cyan;text-shadow:0 0 6px rgba(0,255,255,0.4);}
+.board-empty{padding:20px;text-align:center;color:rgba(255,255,255,0.15);font-size:12px;letter-spacing:2px;}
+
+/* ════════════════════════════════════════
+   GAME OVER
+   ════════════════════════════════════════ */
+#gameOverScreen{
+  position:absolute;inset:0;background:rgba(5,5,16,0.96);
+  display:none;flex-direction:column;justify-content:center;align-items:center;
+  z-index:100;overflow-y:auto;padding:40px 20px;
+}
+.go-title{font-family:'Orbitron',monospace;font-size:36px;font-weight:900;color:white;letter-spacing:5px;margin-bottom:8px;}
+.go-stat{font-size:16px;color:rgba(255,255,255,0.4);margin-bottom:28px;letter-spacing:1px;}
+.go-stat span{font-family:'Orbitron',monospace;font-weight:700;color:cyan;}
+.go-actions{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:28px;}
+#restartBtn{
+  background:linear-gradient(135deg,#00e5ff,#0066ff);color:#000;border:none;
+  padding:13px 46px;border-radius:12px;font-size:15px;font-weight:800;letter-spacing:3px;
+  cursor:pointer;font-family:'Orbitron',monospace;
+  box-shadow:0 0 20px rgba(0,200,255,0.25);transition:transform 0.15s;
+}
+#restartBtn:hover{transform:scale(1.04);}
+.go-menu-btn{
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  color:rgba(255,255,255,0.5);padding:10px 28px;border-radius:12px;font-size:13px;
+  font-weight:600;letter-spacing:2px;cursor:pointer;transition:all 0.2s;
+  font-family:'Rajdhani',sans-serif;
+}
+.go-menu-btn:hover{border-color:rgba(255,255,255,0.2);color:white;}
+#usernameInput2{
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  color:white;padding:12px 20px;border-radius:12px;font-size:15px;outline:none;
+  width:220px;text-align:center;font-family:'Rajdhani',sans-serif;font-weight:600;
+  letter-spacing:1px;margin-bottom:4px;transition:border-color 0.2s;
+}
+#usernameInput2:focus{border-color:rgba(0,255,255,0.3);}
 </style>
 </head>
 <body>
 
 <canvas id="bg"></canvas>
-<canvas id="blindOverlay" style="position:fixed;inset:0;z-index:6;pointer-events:none;display:none;"></canvas>
 <button id="musicToggle" onclick="toggleMusic()">🎵 MÜZİK</button>
 
 <div id="leftPortal" class="portal"></div>
@@ -137,9 +231,8 @@ body.mirror-active::after{content:'';position:fixed;inset:0;pointer-events:none;
 <div id="hazard"></div>
 
 <div id="hud">
-  <div id="hudScore">Skor: 0</div>
+  <div id="hudScore">0</div>
   <div id="hudLevel">SEVİYE 1</div>
-  <div id="hudMode"></div>
   <div id="hudLives">
     <span class="heart" id="h1">❤️</span>
     <span class="heart" id="h2">❤️</span>
@@ -156,99 +249,99 @@ body.mirror-active::after{content:'';position:fixed;inset:0;pointer-events:none;
   <div id="laserKey">SPACE</div>
 </div>
 
-<!-- ── MENÜ ──────────────────────────────────────────────────────── -->
+<!-- ══ MENÜ ══════════════════════════════════════════════════════ -->
 <div id="menu">
-  <div class="menu-title">KAÇIŞ</div>
-  <div class="menu-sub">HAYATTA KAL</div>
+  <div class="menu-inner">
 
-  <!-- MOD SEÇİCİ -->
-  <div class="mode-selector">
-    <div class="mode-btn active-normal" id="modeNormalBtn" onclick="selectMode('normal')">
-      <span class="mode-icon">🎮</span>
-      <span class="mode-name mode-name-normal">NORMAL</span>
-      <div class="mode-desc">Klasik mod</div>
-    </div>
-    <div class="mode-btn" id="modeBlindBtn" onclick="selectMode('blind')">
-      <span class="mode-icon">🌑</span>
-      <span class="mode-name mode-name-blind">KÖR MOD</span>
-      <div class="mode-desc">Karanlıkta hayatta kal</div>
-    </div>
-    <div class="mode-btn" id="modeMirrorBtn" onclick="selectMode('mirror')">
-      <span class="mode-icon">🔀</span>
-      <span class="mode-name mode-name-mirror">AYNA MOD</span>
-      <div class="mode-desc">Kontroller ters!</div>
-    </div>
-  </div>
+    <div class="menu-logo">KAÇIŞ</div>
+    <div class="menu-tagline">hayatta kal</div>
 
-  <!-- MOD BİLGİ KUTUSU (dinamik) -->
-  <div id="modeInfoBox" class="info-box">
-    <div id="modeInfoTitle" class="info-box-title">NASIL OYNANIR?</div>
-    <div id="modeInfoDesc" class="info-desc">
-      Kırmızı tehlike bölgesinden ve düşmanlardan kaçarak hayatta kal!<br>
-      Portaller düşmanlar için doğum noktasıdır — onlardan uzak dur.<br>
-      Lazeri kullanarak düşmanları yok et ve skoru yükselt.<br>
-      <span style="color:rgba(255,140,0,0.8);font-weight:600;">Seviye 6'da turuncu takipçiler sahaya çıkar — dikkat!</span>
-    </div>
-    <div id="modeInfoExtra">
-      <div class="info-grid">
-        <div class="info-item"><div class="info-icon">🎮</div><div class="info-text"><b>WASD / Oklar</b><br>Hareket et</div></div>
-        <div class="info-item"><div class="info-icon">⚡</div><div class="info-text"><b>SPACE</b><br>Lazer ateşle</div></div>
-        <div class="info-item"><div class="info-icon">💛</div><div class="info-text"><b>Sarı item</b><br>3 saniye kalkan</div></div>
-        <div class="info-item"><div class="info-icon">💙</div><div class="info-text"><b>Mavi item</b><br>Can veya +300 skor</div></div>
+    <!-- Kontrol bilgileri -->
+    <div class="info-cards">
+      <div class="info-card">
+        <div class="ic-icon">🎮</div>
+        <div class="ic-text"><b>HAREKET</b>WASD veya ok tuşları ile kaç</div>
       </div>
-      <div class="enemy-grid">
-        <div class="enemy-item"><div class="enemy-dot" style="background:#ff2244;box-shadow:0 0 5px #ff2244;"></div><div class="enemy-text"><b style="color:#ff4466;">Normal</b><br>Sıradan düşman</div></div>
-        <div class="enemy-item"><div class="enemy-dot" style="background:#ffdd00;box-shadow:0 0 5px #ffaa00;"></div><div class="enemy-text"><b style="color:#ffdd00;">Hızlı</b><br>Küçük, süratli</div></div>
-        <div class="enemy-item"><div class="enemy-dot" style="background:#cc44ff;box-shadow:0 0 5px #aa00ff;"></div><div class="enemy-text"><b style="color:#cc44ff;">Tank</b><br>3 lazer vurur</div></div>
-        <div class="enemy-item"><div class="enemy-dot" style="background:#ff8800;box-shadow:0 0 5px #ff6600;"></div><div class="enemy-text"><b style="color:#ff8800;">Takipçi ⚠️</b><br>Seni kovalar!</div></div>
+      <div class="info-card">
+        <div class="ic-icon">⚡</div>
+        <div class="ic-text"><b>LAZER</b>SPACE ile en yakın düşmanı vur</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-icon">💛</div>
+        <div class="ic-text"><b>KALKAN</b>Sarı item — 3 saniye koruma</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-icon">💙</div>
+        <div class="ic-text"><b>CAN / SKOR</b>Mavi item — can veya +300 puan</div>
       </div>
     </div>
-  </div>
 
-  <input id="usernameInput" placeholder="Kullanıcı adı gir" maxlength="16">
-  <button id="startBtn" class="btn-normal" onclick="startGame()">BAŞLA</button>
+    <!-- Düşman türleri -->
+    <div style="width:100%;margin-bottom:20px;">
+      <div class="enemy-row">
+        <div class="e-dot" style="background:#ff2244;box-shadow:0 0 6px #ff2244;"></div>
+        <div class="e-info"><b style="color:#ff4466;">Normal</b> Rastgele hareket eder, 1 lazerle yok olur</div>
+        <div class="e-badge" style="background:rgba(255,34,68,0.12);color:#ff4466;border:1px solid rgba(255,34,68,0.25);">LV 1+</div>
+      </div>
+      <div class="enemy-row">
+        <div class="e-dot" style="background:#ffdd00;box-shadow:0 0 6px #ffaa00;"></div>
+        <div class="e-info"><b style="color:#ffdd00;">Hızlı</b> Küçük ama çok süratli, dikkatli ol</div>
+        <div class="e-badge" style="background:rgba(255,200,0,0.1);color:#ffdd00;border:1px solid rgba(255,200,0,0.2);">LV 2+</div>
+      </div>
+      <div class="enemy-row">
+        <div class="e-dot" style="background:#cc44ff;box-shadow:0 0 6px #aa00ff;"></div>
+        <div class="e-info"><b style="color:#cc44ff;">Tank</b> Büyük ve dayanıklı, 3 lazer vurması gerekir</div>
+        <div class="e-badge" style="background:rgba(180,0,255,0.1);color:#cc44ff;border:1px solid rgba(180,0,255,0.2);">LV 4+</div>
+      </div>
+      <div class="enemy-row">
+        <div class="e-dot" style="background:#ff8800;box-shadow:0 0 6px #ff6600;"></div>
+        <div class="e-info"><b style="color:#ff8800;">Takipçi ⚠️</b> Seni kovalıyor! Sonsuza kadar...</div>
+        <div class="e-badge" style="background:rgba(255,120,0,0.1);color:#ff8800;border:1px solid rgba(255,120,0,0.2);">LV 6+</div>
+      </div>
+    </div>
 
-  <!-- SEKMELI LİDERLİK TABLOLARI -->
-  <div class="boards-wrap">
-    <div class="board-tabs">
-      <div class="board-tab tab-active-normal" id="tabNormal" onclick="switchBoardTab('normal')">🎮 NORMAL</div>
-      <div class="board-tab" id="tabBlind" onclick="switchBoardTab('blind')">🌑 KÖR</div>
-      <div class="board-tab" id="tabMirror" onclick="switchBoardTab('mirror')">🔀 AYNA</div>
+    <!-- Kullanıcı adı + başla -->
+    <div class="form-section">
+      <input id="usernameInput" placeholder="Kullanıcı adını gir" maxlength="16">
+      <button id="startBtn" onclick="startGame()">BAŞLA</button>
     </div>
-    <div class="board-panel" id="boardPanel">
-      <div id="boardRows"><div style="color:rgba(255,255,255,0.2);font-size:12px;text-align:center;">Yükleniyor...</div></div>
+
+    <!-- Liderlik tablosu -->
+    <div class="board-wrap">
+      <div class="board-header">
+        <div class="board-title">EN İYİ 5</div>
+        <div class="board-line"></div>
+        <div style="font-size:16px;">🏆</div>
+      </div>
+      <div class="board-rows" id="boardRows">
+        <div class="board-empty">Yükleniyor...</div>
+      </div>
     </div>
+
   </div>
 </div>
 
-<!-- GAME OVER -->
+<!-- ══ GAME OVER ═════════════════════════════════════════════════ -->
 <div id="gameOverScreen">
   <div class="go-title">OYUN BİTTİ</div>
-  <div id="goModeBadge" class="go-mode-badge"></div>
-  <div class="go-score">Skor: <span id="goScore" style="color:cyan;">0</span> &nbsp;|&nbsp; Seviye: <span id="goLevel" style="color:cyan;">1</span></div>
-  <input id="usernameInput2" placeholder="Kullanıcı adı" maxlength="16"
-    style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:white;padding:12px 20px;border-radius:12px;font-size:15px;outline:none;width:220px;text-align:center;margin-bottom:14px;">
-  <button id="restartBtn" onclick="restartGame()"
-    style="border:none;padding:13px 40px;border-radius:12px;font-size:16px;font-weight:800;letter-spacing:2px;cursor:pointer;margin-bottom:6px;">
-    TEKRAR OYNA
-  </button>
-  <button onclick="goToMenu()"
-    style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);padding:10px 28px;border-radius:12px;font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;margin-bottom:20px;">
-    ← MOD SEÇ
-  </button>
-  <!-- GO board sekmeli -->
-  <div class="boards-wrap" style="max-width:380px;">
-    <div class="board-tabs">
-      <div class="board-tab" id="goTabNormal" onclick="switchGoBoardTab('normal')">🎮 NORMAL</div>
-      <div class="board-tab" id="goTabBlind" onclick="switchGoBoardTab('blind')">🌑 KÖR</div>
-      <div class="board-tab" id="goTabMirror" onclick="switchGoBoardTab('mirror')">🔀 AYNA</div>
+  <div class="go-stat">Skor: <span id="goScore">0</span> &nbsp;|&nbsp; Seviye: <span id="goLevel">1</span></div>
+  <div class="go-actions">
+    <input id="usernameInput2" placeholder="Kullanıcı adı" maxlength="16">
+    <button id="restartBtn" onclick="restartGame()">TEKRAR OYNA</button>
+    <button class="go-menu-btn" onclick="goToMenu()">← MENÜYE DÖN</button>
+  </div>
+  <div style="width:100%;max-width:380px;">
+    <div class="board-header">
+      <div class="board-title" style="color:rgba(0,255,255,0.5);">EN İYİ 5</div>
+      <div class="board-line"></div>
     </div>
-    <div class="board-panel">
-      <div id="boardRows2"><div style="color:rgba(255,255,255,0.2);font-size:12px;text-align:center;">Yükleniyor...</div></div>
+    <div class="board-rows" id="boardRows2">
+      <div class="board-empty">Yükleniyor...</div>
     </div>
   </div>
 </div>
 
+<!-- ══ MOBİL ══════════════════════════════════════════════════════ -->
 <div id="mobileControls">
   <div id="joystickZone">
     <div id="joystickBase"></div>
@@ -268,131 +361,28 @@ const supabase = createClient(
   "sb_publishable_E5sJ-sNHdSTryFbYcJMHFA_3CYHvPVE"
 );
 
-// Tablolar: leaderboard (normal), leaderboard_blind, leaderboard_mirror
-const TABLE = { normal:"leaderboard", blind:"leaderboard_blind", mirror:"leaderboard_mirror" };
-
-// ── MOD STATE ────────────────────────────────────────────────────
-let selectedMode = "normal"; // "normal" | "blind" | "mirror"
-let currentBoardTab = "normal";
-let currentGoBoardTab = "normal";
-
-const MODE_COLORS = { normal:"cyan", blind:"#cc44ff", mirror:"#ff8800" };
-const MODE_LABELS = { normal:"NORMAL MOD", blind:"KÖR MOD 🌑", mirror:"AYNA MOD 🔀" };
-
-window.selectMode = function(mode){
-  selectedMode = mode;
-  ["normal","blind","mirror"].forEach(m=>{
-    const btn = document.getElementById("modeBtn"+m[0].toUpperCase()+m.slice(1)+"Btn".slice(0));
-    // easier: use IDs set below
-  });
-  document.getElementById("modeNormalBtn").className = "mode-btn" + (mode==="normal"?" active-normal":"");
-  document.getElementById("modeBlindBtn").className  = "mode-btn" + (mode==="blind"?" active-blind":"");
-  document.getElementById("modeMirrorBtn").className = "mode-btn" + (mode==="mirror"?" active-mirror":"");
-
-  const box   = document.getElementById("modeInfoBox");
-  const title = document.getElementById("modeInfoTitle");
-  const desc  = document.getElementById("modeInfoDesc");
-  const extra = document.getElementById("modeInfoExtra");
-  const startBtn = document.getElementById("startBtn");
-
-  if(mode==="normal"){
-    box.className="info-box";
-    title.className="info-box-title"; title.textContent="NASIL OYNANIR?";
-    desc.innerHTML=`Kırmızı tehlike bölgesinden ve düşmanlardan kaçarak hayatta kal!<br>
-      Portaller düşmanlar için doğum noktasıdır — onlardan uzak dur.<br>
-      Lazeri kullanarak düşmanları yok et ve skoru yükselt.<br>
-      <span style="color:rgba(255,140,0,0.8);font-weight:600;">Seviye 6'da turuncu takipçiler sahaya çıkar — dikkat!</span>`;
-    extra.innerHTML=`<div class="info-grid">
-      <div class="info-item"><div class="info-icon">🎮</div><div class="info-text"><b>WASD / Oklar</b><br>Hareket et</div></div>
-      <div class="info-item"><div class="info-icon">⚡</div><div class="info-text"><b>SPACE</b><br>Lazer ateşle</div></div>
-      <div class="info-item"><div class="info-icon">💛</div><div class="info-text"><b>Sarı item</b><br>3 saniye kalkan</div></div>
-      <div class="info-item"><div class="info-icon">💙</div><div class="info-text"><b>Mavi item</b><br>Can veya +300 skor</div></div>
-    </div>
-    <div class="enemy-grid">
-      <div class="enemy-item"><div class="enemy-dot" style="background:#ff2244;box-shadow:0 0 5px #ff2244;"></div><div class="enemy-text"><b style="color:#ff4466;">Normal</b><br>Sıradan düşman</div></div>
-      <div class="enemy-item"><div class="enemy-dot" style="background:#ffdd00;box-shadow:0 0 5px #ffaa00;"></div><div class="enemy-text"><b style="color:#ffdd00;">Hızlı</b><br>Küçük, süratli</div></div>
-      <div class="enemy-item"><div class="enemy-dot" style="background:#cc44ff;box-shadow:0 0 5px #aa00ff;"></div><div class="enemy-text"><b style="color:#cc44ff;">Tank</b><br>3 lazer vurur</div></div>
-      <div class="enemy-item"><div class="enemy-dot" style="background:#ff8800;box-shadow:0 0 5px #ff6600;"></div><div class="enemy-text"><b style="color:#ff8800;">Takipçi ⚠️</b><br>Seni kovalar!</div></div>
-    </div>`;
-    startBtn.className="btn-normal"; startBtn.textContent="BAŞLA";
-  } else if(mode==="blind"){
-    box.className="info-box blind-box";
-    title.className="info-box-title blind-title"; title.textContent="KÖR MOD";
-    desc.innerHTML=`Ekranın büyük kısmı <b style="color:#cc44ff;">zifiri karanlık</b>.<br>
-      Sadece oyuncunun etrafında küçük bir ışık halesi var.<br>
-      Düşmanları duymadan önce göremezsin — reflekslerine güven!<br>
-      <span style="color:#cc44ff;font-weight:600;">Skora %50 bonus eklenir — risk yüksek, ödül yüksek!</span>`;
-    extra.innerHTML=`<div class="info-grid">
-      <div class="info-item"><div class="info-icon">🌑</div><div class="info-text"><b>Görüş alanı</b><br>Sadece çevren</div></div>
-      <div class="info-item"><div class="info-icon">⚡</div><div class="info-text"><b>SPACE</b><br>Lazer ateşle</div></div>
-      <div class="info-item"><div class="info-icon">💡</div><div class="info-text"><b>İpucu</b><br>Portallere dikkat</div></div>
-      <div class="info-item"><div class="info-icon">🎯</div><div class="info-text"><b>Bonus</b><br>x1.5 skor çarpanı</div></div>
-    </div>`;
-    startBtn.className="btn-blind"; startBtn.textContent="KARANLIĞA GİR";
-  } else {
-    box.className="info-box mirror-box";
-    title.className="info-box-title mirror-title"; title.textContent="AYNA MOD";
-    desc.innerHTML=`Tüm kontroller <b style="color:#ff8800;">tam ters</b> çalışıyor.<br>
-      Sola basınca sağa, sağa basınca sola gidersin.<br>
-      Yukarı-aşağı da aynı şekilde. Beynin alışana kadar zorluk çekecek!<br>
-      <span style="color:#ff8800;font-weight:600;">Skora %25 bonus eklenir — kafa karışıklığının ödülü!</span>`;
-    extra.innerHTML=`<div class="info-grid">
-      <div class="info-item"><div class="info-icon">🔀</div><div class="info-text"><b>Sol → Sağa</b><br>Sağ → Sola</div></div>
-      <div class="info-item"><div class="info-icon">🔃</div><div class="info-text"><b>Yukarı → Aşağı</b><br>Aşağı → Yukarı</div></div>
-      <div class="info-item"><div class="info-icon">⚡</div><div class="info-text"><b>SPACE</b><br>Lazer (değişmez)</div></div>
-      <div class="info-item"><div class="info-icon">🎯</div><div class="info-text"><b>Bonus</b><br>x1.25 skor çarpanı</div></div>
-    </div>`;
-    startBtn.className="btn-mirror"; startBtn.textContent="AYNAYA GİR";
-  }
-};
-
-// Board tab switching
-window.switchBoardTab = function(mode){
-  currentBoardTab = mode;
-  ["normal","blind","mirror"].forEach(m=>{
-    const t = document.getElementById("tab"+m[0].toUpperCase()+m.slice(1));
-    t.className = "board-tab" + (m===mode ? " tab-active-"+m : "");
-  });
-  renderBoardInto("boardRows", mode, boardCache[mode]);
-};
-
-window.switchGoBoardTab = function(mode){
-  currentGoBoardTab = mode;
-  ["normal","blind","mirror"].forEach(m=>{
-    const t = document.getElementById("goTab"+m[0].toUpperCase()+m.slice(1));
-    t.className = "board-tab" + (m===mode ? " tab-active-"+m : "");
-  });
-  renderBoardInto("boardRows2", mode, boardCache[mode]);
-};
-
-window.goToMenu = function(){
-  document.getElementById("gameOverScreen").style.display="none";
-  document.getElementById("menu").style.display="flex";
-  document.body.classList.remove("mirror-active");
-};
-
-// ── MÜZİK SİSTEMİ ────────────────────────────────────────────────
+// ── MÜZİK ─────────────────────────────────────────────────────────
 let audioCtx=null,musicEnabled=true,musicStarted=false,currentMusicLevel=1;
 let masterGain=null,drumTimer=null,beatIndex=0,nextBeatTime=0;
 const TEMPOS=[100,108,116,124,132,140];
 function getAudioCtx(){ if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
-function playKick(ctx,time,vol){ const o=ctx.createOscillator(),g=ctx.createGain(); o.connect(g);g.connect(masterGain); o.frequency.setValueAtTime(180,time);o.frequency.exponentialRampToValueAtTime(35,time+0.08); g.gain.setValueAtTime(vol,time);g.gain.exponentialRampToValueAtTime(0.001,time+0.22); o.start(time);o.stop(time+0.23); }
-function playSnare(ctx,time,vol){ const buf=ctx.createBuffer(1,ctx.sampleRate*0.12,ctx.sampleRate),d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1); const n=ctx.createBufferSource();n.buffer=buf; const f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=1800; const g=ctx.createGain();n.connect(f);f.connect(g);g.connect(masterGain); g.gain.setValueAtTime(vol,time);g.gain.exponentialRampToValueAtTime(0.001,time+0.14); n.start(time);n.stop(time+0.15); }
-function playHihat(ctx,time,vol){ const buf=ctx.createBuffer(1,ctx.sampleRate*0.04,ctx.sampleRate),d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1); const n=ctx.createBufferSource();n.buffer=buf; const f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=7000; const g=ctx.createGain();n.connect(f);f.connect(g);g.connect(masterGain); g.gain.setValueAtTime(vol,time);g.gain.exponentialRampToValueAtTime(0.001,time+0.05); n.start(time);n.stop(time+0.06); }
-function playBass(ctx,time,freq,dur,vol){ if(freq<=0) return; const o=ctx.createOscillator(),f=ctx.createBiquadFilter(),g=ctx.createGain(); o.type='sawtooth';o.frequency.value=freq; f.type='lowpass';f.frequency.value=280; o.connect(f);f.connect(g);g.connect(masterGain); g.gain.setValueAtTime(vol,time);g.gain.exponentialRampToValueAtTime(0.001,time+dur*0.85); o.start(time);o.stop(time+dur*0.86); }
+function playKick(ctx,t,v){ const o=ctx.createOscillator(),g=ctx.createGain(); o.connect(g);g.connect(masterGain); o.frequency.setValueAtTime(180,t);o.frequency.exponentialRampToValueAtTime(35,t+0.08); g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.22); o.start(t);o.stop(t+0.23); }
+function playSnare(ctx,t,v){ const buf=ctx.createBuffer(1,ctx.sampleRate*0.12,ctx.sampleRate),d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1); const n=ctx.createBufferSource();n.buffer=buf; const f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=1800; const g=ctx.createGain();n.connect(f);f.connect(g);g.connect(masterGain); g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.14); n.start(t);n.stop(t+0.15); }
+function playHihat(ctx,t,v){ const buf=ctx.createBuffer(1,ctx.sampleRate*0.04,ctx.sampleRate),d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1); const n=ctx.createBufferSource();n.buffer=buf; const f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=7000; const g=ctx.createGain();n.connect(f);f.connect(g);g.connect(masterGain); g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.05); n.start(t);n.stop(t+0.06); }
+function playBass(ctx,t,freq,dur,v){ if(freq<=0) return; const o=ctx.createOscillator(),f=ctx.createBiquadFilter(),g=ctx.createGain(); o.type='sawtooth';o.frequency.value=freq; f.type='lowpass';f.frequency.value=280; o.connect(f);f.connect(g);g.connect(masterGain); g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.001,t+dur*0.85); o.start(t);o.stop(t+dur*0.86); }
 const BASS_SEQS=[[55,0,55,0,0,55,0,49],[55,0,55,49,0,52,55,0],[55,52,0,55,49,0,52,55],[55,58,52,0,55,49,52,0],[55,58,55,52,49,52,55,58],[55,58,61,55,52,49,52,61]];
 function scheduleBeats(){
   if(!musicEnabled||!musicStarted) return;
-  const ctx=getAudioCtx(),lvlIdx=Math.min(currentMusicLevel-1,5),bpm=TEMPOS[lvlIdx],beatDur=60/bpm,ahead=0.12;
+  const ctx=getAudioCtx(),li=Math.min(currentMusicLevel-1,5),bpm=TEMPOS[li],bd=60/bpm,ahead=0.12;
   while(nextBeatTime<ctx.currentTime+ahead){
-    const b8=beatIndex%8,bassVol=0.35+lvlIdx*0.04,drumVol=0.8+lvlIdx*0.06;
-    if(b8===0||b8===4) playKick(ctx,nextBeatTime,drumVol);
-    if(b8===2||b8===6) playSnare(ctx,nextBeatTime,0.4+lvlIdx*0.04);
-    playHihat(ctx,nextBeatTime,0.12+lvlIdx*0.02);
-    if(lvlIdx>=2) playHihat(ctx,nextBeatTime+beatDur*0.5,0.07+lvlIdx*0.01);
-    playBass(ctx,nextBeatTime,BASS_SEQS[lvlIdx][b8],beatDur,bassVol);
-    if(b8===0&&lvlIdx>=2){[110,138.6,164.8].forEach(freq=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=freq;o.connect(g);g.connect(masterGain);const pv=(lvlIdx-1)*0.015;g.gain.setValueAtTime(0,nextBeatTime);g.gain.linearRampToValueAtTime(pv,nextBeatTime+beatDur*1.5);g.gain.linearRampToValueAtTime(0,nextBeatTime+beatDur*8);o.start(nextBeatTime);o.stop(nextBeatTime+beatDur*8.1);});}
-    beatIndex++;nextBeatTime+=beatDur;
+    const b8=beatIndex%8,bv=0.35+li*0.04,dv=0.8+li*0.06;
+    if(b8===0||b8===4) playKick(ctx,nextBeatTime,dv);
+    if(b8===2||b8===6) playSnare(ctx,nextBeatTime,0.4+li*0.04);
+    playHihat(ctx,nextBeatTime,0.12+li*0.02);
+    if(li>=2) playHihat(ctx,nextBeatTime+bd*0.5,0.07+li*0.01);
+    playBass(ctx,nextBeatTime,BASS_SEQS[li][b8],bd,bv);
+    if(b8===0&&li>=2){[110,138.6,164.8].forEach(freq=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=freq;o.connect(g);g.connect(masterGain);const pv=(li-1)*0.015;g.gain.setValueAtTime(0,nextBeatTime);g.gain.linearRampToValueAtTime(pv,nextBeatTime+bd*1.5);g.gain.linearRampToValueAtTime(0,nextBeatTime+bd*8);o.start(nextBeatTime);o.stop(nextBeatTime+bd*8.1);});}
+    beatIndex++;nextBeatTime+=bd;
   }
   drumTimer=setTimeout(scheduleBeats,20);
 }
@@ -400,38 +390,14 @@ function startMusic(){ if(!musicEnabled) return; musicStarted=true; const ctx=ge
 function stopMusic(){ musicStarted=false;clearTimeout(drumTimer); }
 window.toggleMusic=function(){ musicEnabled=!musicEnabled; const btn=document.getElementById("musicToggle"); if(musicEnabled){btn.textContent="🎵 MÜZİK";btn.style.color="";if(gameStarted)startMusic();}else{btn.textContent="🔇 SESSİZ";stopMusic();}};
 
-// ── YILDIZLAR ────────────────────────────────────────────────────
+// ── YILDIZLAR ─────────────────────────────────────────────────────
 const bgCanvas=document.getElementById("bg"),bgCtx=bgCanvas.getContext("2d");
 let stars=[];
 function initStars(){bgCanvas.width=innerWidth;bgCanvas.height=innerHeight;stars=[];for(let i=0;i<120;i++)stars.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.4+0.3,a:Math.random(),da:(Math.random()-0.5)*0.008});}
 function drawStars(){bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);stars.forEach(s=>{s.a=Math.max(0.05,Math.min(1,s.a+s.da));if(s.a<=0.05||s.a>=1)s.da*=-1;bgCtx.beginPath();bgCtx.arc(s.x,s.y,s.r,0,Math.PI*2);bgCtx.fillStyle=`rgba(255,255,255,${s.a})`;bgCtx.fill();});}
 initStars();window.addEventListener("resize",initStars);
 
-// ── KÖR MOD OVERLAY ──────────────────────────────────────────────
-const blindCanvas = document.getElementById("blindOverlay");
-const blindCtx = blindCanvas.getContext("2d");
-function drawBlindOverlay(px, py){
-  blindCanvas.width=innerWidth; blindCanvas.height=innerHeight;
-  blindCtx.clearRect(0,0,innerWidth,innerHeight);
-  // Tüm ekranı koyu yap
-  blindCtx.fillStyle="rgba(0,0,0,0.94)";
-  blindCtx.fillRect(0,0,innerWidth,innerHeight);
-  // Oyuncunun etrafında radial gradient ile delik aç
-  const radius = 110;
-  const grd = blindCtx.createRadialGradient(px,py,0,px,py,radius);
-  grd.addColorStop(0,"rgba(0,0,0,1)");
-  grd.addColorStop(0.55,"rgba(0,0,0,1)");
-  grd.addColorStop(0.85,"rgba(0,0,0,0.7)");
-  grd.addColorStop(1,"rgba(0,0,0,0)");
-  blindCtx.globalCompositeOperation="destination-out";
-  blindCtx.beginPath();
-  blindCtx.arc(px,py,radius,0,Math.PI*2);
-  blindCtx.fillStyle=grd;
-  blindCtx.fill();
-  blindCtx.globalCompositeOperation="source-over";
-}
-
-// ── SABITLER ─────────────────────────────────────────────────────
+// ── SABİTLER ──────────────────────────────────────────────────────
 const PLAYER_SPEED=5,LASER_COOLDOWN=2500,LASER_RANGE=900,MAX_LEVEL=6,INVINC_TIME=2800;
 const LEVEL_SCORES=[0,800,2000,3800,6000,9000];
 const ENEMY_TYPES={
@@ -450,22 +416,21 @@ const LEVEL_POOLS={
 };
 
 // ── STATE ─────────────────────────────────────────────────────────
-let gameStarted=false,score=0,level=1,lives=3;
-let x=0,y=0,username="";
+let gameStarted=false,score=0,level=1,lives=3,username="";
+let x=0,y=0;
 let invincible=false,invincTimer=null,shieldActive=false;
 const keys={};
 const enemies=[],powerups=[];
 let spawnInterval=null,laserReady=true,laserCooldownStart=0,laserCooldownRaf=null;
-let activeMode="normal"; // oyun sırasında aktif mod
 
 const isMobile=/Android|iPhone|iPad|iPod|Touch/i.test(navigator.userAgent)||('ontouchstart' in window);
 
-// ── JOYSTICK ─────────────────────────────────────────────────────
+// ── JOYSTİCK ─────────────────────────────────────────────────────
 let joyActive=false,joyX=0,joyY=0,joyCX=0,joyCY=0,joyTouchId=null;
 const joystickZone=document.getElementById("joystickZone"),joystickKnob=document.getElementById("joystickKnob"),JOY_RADIUS=39;
 joystickZone.addEventListener("touchstart",e=>{e.preventDefault();const t=e.changedTouches[0];joyTouchId=t.identifier;joyActive=true;const r=joystickZone.getBoundingClientRect();joyCX=r.left+r.width/2;joyCY=r.top+r.height/2;updateKnob(t.clientX,t.clientY);},{passive:false});
 joystickZone.addEventListener("touchmove",e=>{e.preventDefault();for(const t of e.changedTouches)if(t.identifier===joyTouchId){joyX=t.clientX;joyY=t.clientY;updateKnob(t.clientX,t.clientY);}},{passive:false});
-joystickZone.addEventListener("touchend",e=>{for(const t of e.changedTouches)if(t.identifier===joyTouchId){joyActive=false;joyTouchId=null;joystickKnob.style.transform="translate(-50%,-50%);";}});
+joystickZone.addEventListener("touchend",e=>{for(const t of e.changedTouches)if(t.identifier===joyTouchId){joyActive=false;joyTouchId=null;joystickKnob.style.transform="translate(-50%,-50%)";}});
 function updateKnob(cx,cy){let dx=cx-joyCX,dy=cy-joyCY;const d=Math.hypot(dx,dy);if(d>JOY_RADIUS){dx=dx/d*JOY_RADIUS;dy=dy/d*JOY_RADIUS;}joystickKnob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;joyX=joyCX+dx;joyY=joyCY+dy;}
 const fireBtn=document.getElementById("fireBtn"),fireCooldownRing=document.getElementById("fireCooldownRing");
 fireBtn.addEventListener("touchstart",e=>{e.preventDefault();fireBtn.classList.add("active");fireLaser();},{passive:false});
@@ -541,8 +506,8 @@ function updateLaserBar(){
   cancelAnimationFrame(laserCooldownRaf);
   const lbl=document.getElementById("laserLabel"),fill=document.getElementById("laserFill");
   lbl.textContent="BEKLEME";fill.style.background="rgba(0,255,255,0.25)";fill.style.boxShadow="none";
-  fireCooldownRing.style.background="conic-gradient(rgba(0,255,255,0.4) 0%, transparent 0%)";
-  function tick(){const pct=Math.min((performance.now()-laserCooldownStart)/LASER_COOLDOWN,1);fill.style.width=(pct*100)+"%";fireCooldownRing.style.background=`conic-gradient(rgba(0,255,255,0.5) ${pct*360}deg, transparent ${pct*360}deg)`;if(pct<1){laserCooldownRaf=requestAnimationFrame(tick);}else{laserReady=true;lbl.textContent="LAZER ✓";fill.style.background="cyan";fill.style.boxShadow="0 0 4px cyan";fireCooldownRing.style.background="conic-gradient(cyan 360deg, transparent 360deg)";}}
+  fireCooldownRing.style.background="conic-gradient(rgba(0,255,255,0.4) 0%,transparent 0%)";
+  function tick(){const pct=Math.min((performance.now()-laserCooldownStart)/LASER_COOLDOWN,1);fill.style.width=(pct*100)+"%";fireCooldownRing.style.background=`conic-gradient(rgba(0,255,255,0.5) ${pct*360}deg,transparent ${pct*360}deg)`;if(pct<1){laserCooldownRaf=requestAnimationFrame(tick);}else{laserReady=true;lbl.textContent="LAZER ✓";fill.style.background="cyan";fill.style.boxShadow="0 0 4px cyan";fireCooldownRing.style.background="conic-gradient(cyan 360deg,transparent 360deg)";}}
   laserCooldownRaf=requestAnimationFrame(tick);
 }
 function hitFX(hx,hy,col){for(let i=0;i<8;i++){const p=document.createElement("div");p.style.cssText=`position:absolute;width:5px;height:5px;background:${col};border-radius:50%;left:${hx}px;top:${hy}px;pointer-events:none;box-shadow:0 0 4px ${col};z-index:20;`;const a=(i/8)*Math.PI*2,d=22+Math.random()*18;p.animate([{transform:"translate(-50%,-50%)",opacity:1},{transform:`translate(calc(-50% + ${Math.cos(a)*d}px),calc(-50% + ${Math.sin(a)*d}px))`,opacity:0}],{duration:380,easing:"ease-out",fill:"forwards"});document.body.appendChild(p);setTimeout(()=>p.remove(),400);}}
@@ -553,7 +518,7 @@ function checkLevel(){
   if(score>=LEVEL_SCORES[level]){
     level++;currentMusicLevel=level;
     showLevelBanner();resetSpawnInterval();
-    document.getElementById("hudLevel").textContent=level>=MAX_LEVEL?"⚠️ MAX SEVİYE":"SEVİYE "+level;
+    document.getElementById("hudLevel").textContent=level>=MAX_LEVEL?"⚠️ MAX":"SEVİYE "+level;
   }
 }
 function showLevelBanner(){
@@ -579,34 +544,26 @@ document.addEventListener("keyup",e=>{
   if(e.key==="ArrowDown"||e.key==="s") keys.down=false;
 });
 
-// ── GAME LOOP ─────────────────────────────────────────────────────
+// ── OYUN DÖNGÜSÜ ──────────────────────────────────────────────────
 function loop(){
   if(!gameStarted) return;
   drawStars();
-
   let vx=0,vy=0;
-  const mirror = activeMode==="mirror";
   if(joyActive){
     let dx=joyX-joyCX,dy=joyY-joyCY;
     const d=Math.hypot(dx,dy),max=60;
     if(d>max){dx=dx/d*max;dy=dy/d*max;}
-    vx=(mirror?-1:1)*dx/max*PLAYER_SPEED; vy=(mirror?-1:1)*dy/max*PLAYER_SPEED;
+    vx=dx/max*PLAYER_SPEED;vy=dy/max*PLAYER_SPEED;
   } else {
-    if(keys.left)  vx=mirror? PLAYER_SPEED:-PLAYER_SPEED;
-    if(keys.right) vx=mirror?-PLAYER_SPEED: PLAYER_SPEED;
-    if(keys.up)    vy=mirror? PLAYER_SPEED:-PLAYER_SPEED;
-    if(keys.down)  vy=mirror?-PLAYER_SPEED: PLAYER_SPEED;
+    if(keys.left) vx=-PLAYER_SPEED;
+    if(keys.right) vx=PLAYER_SPEED;
+    if(keys.up) vy=-PLAYER_SPEED;
+    if(keys.down) vy=PLAYER_SPEED;
   }
   x=Math.max(0,Math.min(x+vx,innerWidth-24));
   y=Math.max(0,Math.min(y+vy,innerHeight-24));
-
   const playerEl=document.getElementById("player");
   playerEl.style.left=x+"px";playerEl.style.top=y+"px";
-
-  // Kör mod overlay
-  if(activeMode==="blind"){
-    drawBlindOverlay(x+12,y+12);
-  }
 
   const hx=innerWidth/2-50,hy=innerHeight/2-50,hw=100,hh=100;
   for(let i=enemies.length-1;i>=0;i--){
@@ -630,26 +587,13 @@ function loop(){
     }
   }
 
-  // Mod bonus çarpanı
-  const bonusTick = activeMode==="blind" ? 1.5 : activeMode==="mirror" ? 1.25 : 1;
-  score += bonusTick;
-
+  score++;
   checkLevel();
-  document.getElementById("hudScore").textContent="Skor: "+Math.floor(score);
+  document.getElementById("hudScore").textContent=Math.floor(score);
   requestAnimationFrame(loop);
 }
 
-// ── START ─────────────────────────────────────────────────────────
-function startGame(){
-  username=document.getElementById("usernameInput").value.trim()||"Anon";
-  activeMode=selectedMode;
-  _startGame();
-}
-function restartGame(){
-  username=document.getElementById("usernameInput2").value.trim()||username||"Anon";
-  // activeMode stays the same
-  _startGame();
-}
+// ── BAŞLAT ────────────────────────────────────────────────────────
 function _startGame(){
   startMusic();
   document.getElementById("menu").style.display="none";
@@ -658,23 +602,6 @@ function _startGame(){
   document.getElementById("player").style.display="block";
   document.getElementById("laserUI").style.display="flex";
   if(isMobile) document.getElementById("mobileControls").style.display="block";
-
-  // Mod HUD badge
-  const hudMode=document.getElementById("hudMode");
-  if(activeMode==="blind"){hudMode.textContent="🌑 KÖR";hudMode.style.cssText="font-size:11px;font-weight:700;letter-spacing:2px;padding:3px 10px;border-radius:20px;background:rgba(180,0,255,0.12);border:1px solid rgba(180,0,255,0.3);color:#cc44ff;";}
-  else if(activeMode==="mirror"){hudMode.textContent="🔀 AYNA";hudMode.style.cssText="font-size:11px;font-weight:700;letter-spacing:2px;padding:3px 10px;border-radius:20px;background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.3);color:#ff8800;";}
-  else{hudMode.textContent="";hudMode.style.cssText="";}
-
-  // Kör mod canvas
-  if(activeMode==="blind"){
-    const bc=document.getElementById("blindOverlay");bc.style.display="block";bc.width=innerWidth;bc.height=innerHeight;
-  } else {
-    document.getElementById("blindOverlay").style.display="none";
-  }
-
-  // Ayna mod vignette
-  if(activeMode==="mirror") document.body.classList.add("mirror-active");
-  else document.body.classList.remove("mirror-active");
 
   const fill=document.getElementById("laserFill");
   fill.style.width="100%";fill.style.background="cyan";fill.style.boxShadow="0 0 4px cyan";
@@ -688,31 +615,38 @@ function _startGame(){
   updateHearts();
   document.getElementById("hudLevel").textContent="SEVİYE 1";
   resetSpawnInterval();
-  loadAllBoards();
+  loadBoard();
   loop();
 }
-window.startGame=startGame;
-window.restartGame=restartGame;
 
-// ── LEADERBOARD ───────────────────────────────────────────────────
-const boardCache={normal:null,blind:null,mirror:null};
+window.startGame=function(){
+  username=document.getElementById("usernameInput").value.trim()||"Anon";
+  _startGame();
+};
+window.restartGame=function(){
+  username=document.getElementById("usernameInput2").value.trim()||username||"Anon";
+  _startGame();
+};
+window.goToMenu=function(){
+  document.getElementById("gameOverScreen").style.display="none";
+  document.getElementById("menu").style.display="flex";
+};
 
-async function loadAllBoards(){
-  await Promise.all(["normal","blind","mirror"].map(async m=>{
-    const{data}=await supabase.from(TABLE[m]).select("name,score").order("score",{ascending:false}).limit(5);
-    boardCache[m]=data;
-  }));
-  renderBoardInto("boardRows", currentBoardTab, boardCache[currentBoardTab]);
-  renderBoardInto("boardRows2", currentGoBoardTab, boardCache[currentGoBoardTab]);
+// ── LİDERLİK ──────────────────────────────────────────────────────
+async function loadBoard(){
+  const{data}=await supabase.from("leaderboard").select("name,score").order("score",{ascending:false}).limit(5);
+  renderBoard("boardRows",data);
+  renderBoard("boardRows2",data);
 }
-
-function renderBoardInto(elId, mode, data){
-  const el=document.getElementById(elId);
-  if(!el) return;
-  const scoreClass="board-score-"+mode;
-  if(!data||data.length===0){el.innerHTML='<div style="color:rgba(255,255,255,0.2);font-size:12px;text-align:center;">Henüz kayıt yok</div>';return;}
+function renderBoard(elId,data){
+  const el=document.getElementById(elId);if(!el)return;
   const medals=["🥇","🥈","🥉","4.","5."];
-  el.innerHTML=data.map((r,i)=>`<div class="board-row"><span class="board-rank">${medals[i]}</span><span class="board-name">${r.name}</span><span class="board-score ${scoreClass}">${r.score}</span></div>`).join("");
+  if(!data||!data.length){el.innerHTML='<div class="board-empty">Henüz kayıt yok</div>';return;}
+  el.innerHTML=data.map((r,i)=>`<div class="board-row">
+    <span class="b-rank">${medals[i]}</span>
+    <span class="b-name">${r.name}</span>
+    <span class="b-score">${r.score}</span>
+  </div>`).join("");
 }
 
 // ── GAME OVER ─────────────────────────────────────────────────────
@@ -721,11 +655,9 @@ function gameOver(){
   clearInterval(spawnInterval);cancelAnimationFrame(laserCooldownRaf);
   enemies.forEach(e=>e.remove());enemies.length=0;
   powerups.forEach(p=>p.remove());powerups.length=0;
-  document.getElementById("blindOverlay").style.display="none";
-  document.body.classList.remove("mirror-active");
 
   const finalScore=Math.floor(score);
-  supabase.from(TABLE[activeMode]).insert([{name:username,score:finalScore}]).then(()=>loadAllBoards());
+  supabase.from("leaderboard").insert([{name:username,score:finalScore}]).then(()=>loadBoard());
 
   document.getElementById("player").style.display="none";
   document.getElementById("hud").style.display="none";
@@ -733,34 +665,12 @@ function gameOver(){
   document.getElementById("mobileControls").style.display="none";
 
   document.getElementById("goScore").textContent=finalScore;
-  document.getElementById("goScore").style.color=MODE_COLORS[activeMode];
   document.getElementById("goLevel").textContent=level;
-  document.getElementById("goLevel").style.color=MODE_COLORS[activeMode];
   document.getElementById("usernameInput2").value=username;
-
-  // Mode badge on game over
-  const badge=document.getElementById("goModeBadge");
-  badge.textContent=MODE_LABELS[activeMode];
-  if(activeMode==="normal") badge.style.cssText="font-size:11px;font-weight:700;letter-spacing:3px;padding:4px 14px;border-radius:20px;background:rgba(0,255,255,0.1);border:1px solid rgba(0,255,255,0.3);color:cyan;margin-bottom:6px;";
-  else if(activeMode==="blind") badge.style.cssText="font-size:11px;font-weight:700;letter-spacing:3px;padding:4px 14px;border-radius:20px;background:rgba(180,0,255,0.12);border:1px solid rgba(180,0,255,0.3);color:#cc44ff;margin-bottom:6px;";
-  else badge.style.cssText="font-size:11px;font-weight:700;letter-spacing:3px;padding:4px 14px;border-radius:20px;background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.3);color:#ff8800;margin-bottom:6px;";
-
-  const restartBtn=document.getElementById("restartBtn");
-  if(activeMode==="blind"){restartBtn.style.cssText="background:linear-gradient(135deg,#cc44ff,#5500aa);color:#fff;border:none;padding:13px 40px;border-radius:12px;font-size:16px;font-weight:800;letter-spacing:2px;cursor:pointer;margin-bottom:6px;";}
-  else if(activeMode==="mirror"){restartBtn.style.cssText="background:linear-gradient(135deg,#ff8800,#cc3300);color:#fff;border:none;padding:13px 40px;border-radius:12px;font-size:16px;font-weight:800;letter-spacing:2px;cursor:pointer;margin-bottom:6px;";}
-  else{restartBtn.style.cssText="background:linear-gradient(135deg,cyan,#0088ff);color:#000;border:none;padding:13px 40px;border-radius:12px;font-size:16px;font-weight:800;letter-spacing:2px;cursor:pointer;margin-bottom:6px;";}
-
-  // GO ekranı board tab'ını oynanan moda göre ayarla
-  currentGoBoardTab=activeMode;
-  ["normal","blind","mirror"].forEach(m=>{
-    const t=document.getElementById("goTab"+m[0].toUpperCase()+m.slice(1));
-    t.className="board-tab"+(m===activeMode?" tab-active-"+m:"");
-  });
-
   document.getElementById("gameOverScreen").style.display="flex";
 }
 
-loadAllBoards();
+loadBoard();
 drawStars();
 </script>
 </body>
