@@ -15,7 +15,7 @@
   --border:rgba(255,255,255,0.08);--text:rgba(255,255,255,0.85);
   --muted:rgba(255,255,255,0.35);
 }
-html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);cursor:crosshair;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'Syne',sans-serif;color:var(--text);cursor:default;}
 #bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
 #fxCanvas{position:fixed;inset:0;z-index:6;pointer-events:none;}
 #vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,transparent 40%,rgba(3,3,15,0.7) 100%);}
@@ -276,12 +276,12 @@ const fxCanvas = document.getElementById('fxCanvas');
 const fxCtx = fxCanvas.getContext('2d');
 
 // FIX: viewport size tracked independently to avoid zoom bug
-let VW = window.innerWidth;
-let VH = window.innerHeight;
+let VW = document.documentElement.clientWidth;
+let VH = document.documentElement.clientHeight;
 
 function resizeCanvases(){
-  VW = window.innerWidth;
-  VH = window.innerHeight;
+  VW = document.documentElement.clientWidth;
+  VH = document.documentElement.clientHeight;
   bgCanvas.width = fxCanvas.width = VW;
   bgCanvas.height = fxCanvas.height = VH;
 }
@@ -739,6 +739,9 @@ let loopActive=false;
 function loop(){
   if(!gameStarted||paused){loopActive=false;return;}
   loopActive=true;
+  // Always sync VW/VH — handles browser zoom changes between frames
+  VW = document.documentElement.clientWidth;
+  VH = document.documentElement.clientHeight;
   drawBG();updateFX();
 
   // Player movement
@@ -786,7 +789,10 @@ function loop(){
       }
     }
     e.style.left=e.ex+'px';e.style.top=e.ey+'px';
-    if(px<e.ex+e.esize&&px+20>e.ex&&py<e.ey+e.esize&&py+20>e.ey)takeDamage();
+    if(px<e.ex+e.esize&&px+20>e.ex&&py<e.ey+e.esize&&py+20>e.ey){
+      if(shieldActive){spawnFXParticles(e.ex+e.esize/2,e.ey+e.esize/2,ENEMY_DEFS[e.typeName].color,14);showScorePopup('+'+e.epts,e.ex+e.esize/2,e.ey,ENEMY_DEFS[e.typeName].color);score+=e.epts;clearTimeout(e.frozenTimer);e.remove();enemies.splice(i,1);addCombo();flashScreen('rgba(255,214,10,0.12)');}
+      else takeDamage();
+    }
   }
 
   // Hazard collision
